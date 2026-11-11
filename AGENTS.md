@@ -31,7 +31,8 @@ Node 22 or later (`engines` in `package.json`; the Claude Code provider needs it
 
 ## Stack and what each dependency is for
 
-- **App:** Next.js 16 (App Router), React 19, TypeScript strict. Cache Components and the React Compiler are not enabled in `next.config.ts` yet; turn them on deliberately (read the Next docs first).
+- **App:** Next.js 16 (App Router), React 19, TypeScript strict. `next.config.ts` enables Cache Components, partial prefetching and the React Compiler (Rust compiler in Turbopack); read the Next docs on caching before writing data-fetching code.
+- **npm overrides:** `minimatch` is forced to 11 under `@typescript-eslint/typescript-estree` and `@ts-morph/common` to clear a DoS advisory; both only call `minimatch(path, pattern)`. Drop the overrides once those packages ship a patched version. The remaining `npm audit` findings (`deepmerge`, low, via the shadcn CLI) have no fix upstream.
 - **UI:** Tailwind CSS 4, shadcn/ui (`base-nova` style on Base UI, `components.json`), lucide-react, next-themes. Use shadcn components and theme tokens; add components with `npx shadcn@latest add <name>`. The shadcn skill is in `.agents/skills/shadcn`.
 - **Forms and contracts:** Zod 4 (project-wide; required by the Claude Code provider), react-hook-form with `@hookform/resolvers`.
 - **AI:** `ai` (AI SDK v7), `@ai-sdk/react` (`useChat`, client-side tools), `@ai-sdk/anthropic` (the only production provider). `ai-sdk-provider-claude-code` is a **devDependency** for the owner-only local path; see the rules below.
