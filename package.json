@@ -10,7 +10,8 @@
     "lint": "eslint",
     "format": "prettier --write \"**/*.{ts,tsx,mjs,css,json,md,mdx}\"",
     "typecheck": "tsc --noEmit",
-    "test": "vitest run"
+    "test": "vitest run",
+    "dev:local": "MODEL_PROVIDER=claude-local next dev --hostname 127.0.0.1"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^4.0.102",

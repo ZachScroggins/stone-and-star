@@ -37,3 +37,6 @@ pnpm-debug.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# example env file is committed
+!.env.example

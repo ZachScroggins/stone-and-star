@@ -1,11 +1,14 @@
-import { Geist, Geist_Mono, Noto_Serif } from 'next/font/google';
+import type { Metadata } from 'next';
+import { Cormorant_Garamond, Geist, Geist_Mono } from 'next/font/google';
 
 import { ThemeProvider } from '@/components/theme-provider';
 import { cn } from '@/lib/utils';
 import './globals.css';
 
-const notoSerifHeading = Noto_Serif({
+const fontHeading = Cormorant_Garamond({
   subsets: ['latin'],
+  weight: ['500', '600'],
+  style: ['normal', 'italic'],
   variable: '--font-heading',
 });
 
@@ -15,6 +18,12 @@ const fontMono = Geist_Mono({
   subsets: ['latin'],
   variable: '--font-mono',
 });
+
+export const metadata: Metadata = {
+  title: { default: 'Stone & Star', template: 'Stone & Star · %s' },
+  description:
+    'Explore ancient sites in 3D: their measurements, their alignments with the sky, and the evidence on every side of how old they are.',
+};
 
 export default function RootLayout({
   children,
@@ -30,7 +39,7 @@ export default function RootLayout({
         fontMono.variable,
         'font-sans',
         geist.variable,
-        notoSerifHeading.variable
+        fontHeading.variable
       )}
     >
       <body>

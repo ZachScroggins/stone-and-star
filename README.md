@@ -6,7 +6,7 @@ Stone & Star is a web app for exploring ancient sites in 3D: their measurements,
 
 The first site is **Giza**. Others follow once Giza is complete.
 
-> **Status:** early development. The repo is scaffolded and the core dependencies are installed; milestone 1 (basics and infrastructure) is next. Nothing here is real data yet.
+> **Status:** early development (milestone 1). There's a home page, a placeholder Giza page and a plain chat guide. Every figure is placeholder data until it has been sourced and reviewed.
 
 ## What it will do
 
@@ -40,17 +40,20 @@ npm run dev
 
 Open http://localhost:3000.
 
+To ask the guide, paste your own Anthropic API key into the Giza page. The key stays in that browser tab. Copy `.env.example` to `.env.local` for other settings.
+
 ## Scripts
 
-| Command             | What it does               |
-| ------------------- | -------------------------- |
-| `npm run dev`       | Start the dev server       |
-| `npm run build`     | Production build           |
-| `npm start`         | Serve the production build |
-| `npm run lint`      | ESLint                     |
-| `npm run typecheck` | TypeScript check           |
-| `npm test`          | Run the Vitest suite once  |
-| `npm run format`    | Format with Prettier       |
+| Command             | What it does                                                        |
+| ------------------- | ------------------------------------------------------------------- |
+| `npm run dev`       | Start the dev server                                                |
+| `npm run dev:local` | Dev server for the owner's local Claude Code login (localhost only) |
+| `npm run build`     | Production build                                                    |
+| `npm start`         | Serve the production build                                          |
+| `npm run lint`      | ESLint                                                              |
+| `npm run typecheck` | TypeScript check                                                    |
+| `npm test`          | Run the Vitest suite once                                           |
+| `npm run format`    | Format with Prettier                                                |
 
 ## Roadmap
 

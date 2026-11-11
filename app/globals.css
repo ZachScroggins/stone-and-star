@@ -37,6 +37,9 @@
   --sidebar-accent-foreground: oklch(0.205 0 0);
   --sidebar-border: oklch(0.922 0 0);
   --sidebar-ring: oklch(0.708 0 0);
+  /* Sky elements stay cool and monuments warm, so the two read as distinct. */
+  --star: oklch(0.5 0.09 250);
+  --stone: oklch(0.52 0.06 70);
 }
 
 .dark {
@@ -71,11 +74,67 @@
   --sidebar-accent-foreground: oklch(0.985 0 0);
   --sidebar-border: oklch(1 0 0 / 10%);
   --sidebar-ring: oklch(0.556 0 0);
+  --star: oklch(0.9 0.045 240);
+  --stone: oklch(0.78 0.07 75);
+}
+
+/*
+ * Egypt theme, scoped by data-theme on a site's route layout. Exploration palette
+ * from the design canvas (gold primary, ember highlight, warm near-black ground);
+ * finalize in milestone 3.
+ */
+[data-theme='egypt'] {
+  --background: oklch(0.965 0.012 80);
+  --foreground: oklch(0.22 0.02 60);
+  --card: oklch(0.985 0.008 80);
+  --card-foreground: oklch(0.22 0.02 60);
+  --popover: oklch(0.985 0.008 80);
+  --popover-foreground: oklch(0.22 0.02 60);
+  --primary: oklch(0.5 0.1 75);
+  --primary-foreground: oklch(0.985 0.01 85);
+  --secondary: oklch(0.92 0.02 80);
+  --secondary-foreground: oklch(0.25 0.02 60);
+  --muted: oklch(0.93 0.015 80);
+  --muted-foreground: oklch(0.46 0.03 65);
+  --accent: oklch(0.92 0.03 60);
+  --accent-foreground: oklch(0.3 0.06 45);
+  --border: oklch(0.86 0.02 75);
+  --input: oklch(0.86 0.02 75);
+  --ring: oklch(0.6 0.1 75);
+  --ember: oklch(0.55 0.16 45);
+  --stone: oklch(0.5 0.07 70);
+}
+
+.dark [data-theme='egypt'],
+[data-theme='egypt'].dark {
+  --background: oklch(0.17 0.012 60);
+  --foreground: oklch(0.93 0.02 85);
+  --card: oklch(0.21 0.014 60);
+  --card-foreground: oklch(0.93 0.02 85);
+  --popover: oklch(0.21 0.014 60);
+  --popover-foreground: oklch(0.93 0.02 85);
+  --primary: oklch(0.8 0.12 85);
+  --primary-foreground: oklch(0.2 0.02 60);
+  --secondary: oklch(0.26 0.015 60);
+  --secondary-foreground: oklch(0.93 0.02 85);
+  --muted: oklch(0.25 0.014 60);
+  --muted-foreground: oklch(0.72 0.03 80);
+  --accent: oklch(0.3 0.04 50);
+  --accent-foreground: oklch(0.9 0.05 70);
+  --border: oklch(1 0 0 / 12%);
+  --input: oklch(1 0 0 / 16%);
+  --ring: oklch(0.7 0.1 80);
+  --ember: oklch(0.72 0.16 50);
+  --stone: oklch(0.8 0.07 80);
 }
 
 @theme inline {
   --font-sans: var(--font-sans);
   --font-heading: var(--font-heading);
+  --font-display: var(--font-display);
+  --color-star: var(--star);
+  --color-stone: var(--stone);
+  --color-ember: var(--ember);
   --color-sidebar-ring: var(--sidebar-ring);
   --color-sidebar-border: var(--sidebar-border);
   --color-sidebar-accent-foreground: var(--sidebar-accent-foreground);
@@ -125,5 +184,34 @@
   }
   html {
     @apply font-sans;
+  }
+}
+
+/* Hero: the sight line draws once from the apex to its star. */
+.sightline-draw {
+  stroke-dasharray: 1;
+  stroke-dashoffset: 0;
+}
+.sightline-target {
+  transform-box: fill-box;
+  transform-origin: center;
+}
+@media (prefers-reduced-motion: no-preference) {
+  .sightline-draw {
+    animation: sightline-draw 1.6s cubic-bezier(0.65, 0, 0.35, 1) 0.3s both;
+  }
+  .sightline-target {
+    animation: sightline-target 0.6s ease-out 1.8s both;
+  }
+}
+@keyframes sightline-draw {
+  from {
+    stroke-dashoffset: 1;
+  }
+}
+@keyframes sightline-target {
+  from {
+    opacity: 0;
+    transform: scale(0.4);
   }
 }
