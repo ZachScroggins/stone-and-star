@@ -10,6 +10,7 @@ import { z } from 'zod';
 
 import { getModel, isLocalClaudeEnabled } from '@/lib/ai/models';
 import { GUIDE_SYSTEM_PROMPT } from '@/lib/ai/prompts';
+import { getCurrentUser } from '@/lib/auth/server';
 
 export const maxDuration = 60;
 
@@ -23,8 +24,12 @@ const Body = z.object({
   messages: z.array(z.unknown()).min(1).max(MAX_MESSAGES),
 });
 
-function jsonError(status: number, error: string) {
-  return Response.json({ error }, { status });
+/** Plain-text errors: `useChat` shows the response body as the error message. */
+function textError(status: number, error: string) {
+  return new Response(error, {
+    status,
+    headers: { 'content-type': 'text/plain; charset=utf-8' },
+  });
 }
 
 const LOCAL_HOSTNAMES = new Set(['localhost', '127.0.0.1', '[::1]']);
@@ -45,37 +50,39 @@ function isLocalhost(request: Request) {
 }
 
 export async function POST(request: Request) {
-  // Until sign-in lands (milestone 1, Neon Auth), the guide only runs on dev servers.
-  if (process.env.NODE_ENV !== 'development') {
-    return jsonError(403, 'Sign-in is required to use the guide.');
+  // The guide is for signed-in visitors only (access tier 2). Checked here, in the
+  // handler, so a direct request without a session is refused.
+  const user = await getCurrentUser();
+  if (!user) {
+    return textError(401, 'Sign in to ask the guide.');
   }
 
   const local = isLocalClaudeEnabled();
   // The local Claude Code path uses the owner's subscription: owner's machine only.
   if (local && !isLocalhost(request)) {
-    return jsonError(403, 'The local model is only available on localhost.');
+    return textError(403, 'The local model is only available on localhost.');
   }
 
   const parsedBody = Body.safeParse(await request.json().catch(() => null));
   if (!parsedBody.success) {
-    return jsonError(400, `Send between 1 and ${MAX_MESSAGES} messages.`);
+    return textError(400, `Send between 1 and ${MAX_MESSAGES} messages.`);
   }
   const validated = await safeValidateUIMessages({ messages: parsedBody.data.messages });
   if (!validated.success) {
-    return jsonError(400, 'Messages are malformed.');
+    return textError(400, 'Messages are malformed.');
   }
   const messages = validated.data;
   for (const message of messages) {
     for (const part of message.parts) {
       if (part.type === 'text' && part.text.length > MAX_TEXT_CHARS) {
-        return jsonError(413, `Keep each message under ${MAX_TEXT_CHARS} characters.`);
+        return textError(413, `Keep each message under ${MAX_TEXT_CHARS} characters.`);
       }
     }
   }
 
   const apiKey = request.headers.get(API_KEY_HEADER)?.trim() || undefined;
   if (!local && !apiKey?.startsWith('sk-ant-')) {
-    return jsonError(401, 'Add your Anthropic API key to use the guide.');
+    return textError(401, 'Add your Anthropic API key to use the guide.');
   }
 
   const { model, callOptions } = await getModel('chat', { apiKey, system: GUIDE_SYSTEM_PROMPT });

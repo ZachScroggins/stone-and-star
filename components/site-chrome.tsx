@@ -1,5 +1,6 @@
 import Link from 'next/link';
 
+import { AccountMenu } from '@/components/auth/account-menu';
 import { LogoMark, Wordmark } from '@/components/brand/logo-mark';
 import { ThemeToggle } from '@/components/theme-toggle';
 import { cn } from '@/lib/utils';
@@ -24,6 +25,7 @@ export function SiteHeader({ siteName }: { siteName?: string }) {
         >
           Giza
         </Link>
+        <AccountMenu />
         <ThemeToggle />
       </nav>
     </header>

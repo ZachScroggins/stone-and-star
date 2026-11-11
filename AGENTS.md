@@ -42,7 +42,10 @@ Node 22 or later (`engines` in `package.json`; the Claude Code provider needs it
 | `lib/ai/claude-local.ts` | The dev-only Claude Code provider and its lockdown                           |
 | `lib/ai/prompts.ts`      | Guide system prompt                                                          |
 | `lib/years.ts`           | `fromBce()`, `fromCe()`, `formatYear()`                                      |
-| `app/api/chat/route.ts`  | Chat endpoint (dev-only until sign-in lands)                                 |
+| `app/api/chat/route.ts`  | Chat endpoint; requires a signed-in user                                     |
+| `lib/auth/`              | Neon Auth server (`auth`, `getCurrentUser`), browser client, `safeNextPath`  |
+| `app/api/auth/[...path]` | Same-origin proxy to Neon Auth                                               |
+| `app/sign-in/`           | Google and GitHub sign-in page (`?next=` return path)                        |
 | `app/giza/`              | Giza route; its layout sets `data-theme="egypt"`                             |
 | `components/brand/`      | Logo mark, wordmark, hero scene                                              |
 
@@ -58,7 +61,10 @@ Tests sit next to the code as `*.test.ts`.
 - **3D:** `three`, `@react-three/fiber`, `@react-three/drei`. State: `zustand` (one scene store).
 - **Tests:** Vitest.
 - **Server-only code:** import `server-only` at the top of any module that touches keys, the database or model calls.
-- **Not installed yet (on purpose):** Neon and Neon Auth packages (install when the Neon project exists; `@neondatabase/auth` is still beta and reads `NEON_AUTH_BASE_URL` and `NEON_AUTH_COOKIE_SECRET`), Drizzle (when the schema settles or a Neon dev branch is needed), the astronomy library (open question for M2: needs a precession model valid over thousands of years).
+- **Auth:** `@neon/auth` (Managed Better Auth; the Neon Auth skill covers it). Reads `NEON_AUTH_BASE_URL` and `NEON_AUTH_COOKIE_SECRET`. Sign-in is Google and GitHub only; email/password, magic link, phone and organizations are off in Neon. No `proxy.ts`: browsing is public, so check the session inside each Route Handler or Server Action that needs it (`getCurrentUser()`), and read it in client components with `authClient.useSession()` so pages stay static. Trusted domains are set in Neon (`neon neon-auth domain add <origin>`).
+- **Markdown:** `streamdown` renders guide answers (Tailwind `@source` line in `app/globals.css`).
+- **Env vars:** the Vercel Neon integration prefixes everything with `NEON_` (`NEON_DATABASE_URL`, ...). Pull with `vercel env pull .env.local`.
+- **Not installed yet (on purpose):** Drizzle (when the schema settles or a Neon dev branch is needed), the astronomy library (open question for M2: needs a precession model valid over thousands of years).
 
 ## Architecture rules (from the plan)
 

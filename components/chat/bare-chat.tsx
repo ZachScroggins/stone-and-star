@@ -2,12 +2,17 @@
 
 import { useChat } from '@ai-sdk/react';
 import { DefaultChatTransport } from 'ai';
+import Link from 'next/link';
+import { usePathname } from 'next/navigation';
 import { useState } from 'react';
+import { Streamdown } from 'streamdown';
+import 'streamdown/styles.css';
 
-import { Button } from '@/components/ui/button';
+import { Button, buttonVariants } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
+import { authClient } from '@/lib/auth/client';
 
 const KEY_STORAGE = 'stone-and-star:anthropic-key';
 const API_KEY_HEADER = 'x-anthropic-key';
@@ -39,6 +44,8 @@ export function BareChat({ localModel }: { localModel: boolean }) {
       })
   );
   const { messages, sendMessage, status, error, stop } = useChat({ transport });
+  const { data: session, isPending: sessionPending } = authClient.useSession();
+  const pathname = usePathname();
 
   const busy = status === 'submitted' || status === 'streaming';
   const needsKey = !localModel && !apiKey.startsWith('sk-ant-');
@@ -60,19 +67,8 @@ export function BareChat({ localModel }: { localModel: boolean }) {
     setInput('');
   }
 
-  return (
-    <section aria-labelledby="guide-heading" className="flex flex-col gap-5">
-      <div>
-        <h2 id="guide-heading" className="font-display text-2xl font-semibold tracking-wide">
-          Ask the guide
-        </h2>
-        <p className="mt-1 text-sm text-muted-foreground">
-          {localModel
-            ? 'Running on the local Claude Code model (development only).'
-            : 'Plain answers for now. Sources and scene control come in a later milestone.'}
-        </p>
-      </div>
-
+  const signedInChat = (
+    <>
       {localModel ? null : (
         <div className="grid gap-2">
           <Label htmlFor="anthropic-key">Your Anthropic API key</Label>
@@ -100,11 +96,17 @@ export function BareChat({ localModel }: { localModel: boolean }) {
               className={
                 message.role === 'user'
                   ? 'max-w-prose rounded-xl bg-secondary px-4 py-2.5'
-                  : 'max-w-prose leading-relaxed whitespace-pre-wrap'
+                  : 'max-w-prose leading-relaxed'
               }
             >
               {message.parts.map((part, i) =>
-                part.type === 'text' ? <span key={i}>{part.text}</span> : null
+                part.type !== 'text' ? null : message.role === 'user' ? (
+                  <span key={i}>{part.text}</span>
+                ) : (
+                  <Streamdown key={i} isAnimating={status === 'streaming'} className="guide-answer">
+                    {part.text}
+                  </Streamdown>
+                )
               )}
             </div>
           </li>
@@ -157,6 +159,39 @@ export function BareChat({ localModel }: { localModel: boolean }) {
           ) : null}
         </div>
       </form>
+    </>
+  );
+
+  return (
+    <section aria-labelledby="guide-heading" className="flex flex-col gap-5">
+      <div>
+        <h2 id="guide-heading" className="font-display text-2xl font-semibold tracking-wide">
+          Ask the guide
+        </h2>
+        <p className="mt-1 text-sm text-muted-foreground">
+          {localModel
+            ? 'Running on the local Claude Code model (development only).'
+            : 'Plain answers for now. Sources and scene control come in a later milestone.'}
+        </p>
+      </div>
+
+      {sessionPending ? (
+        <p className="text-sm text-muted-foreground">Checking sign-in…</p>
+      ) : !session?.user ? (
+        <div className="grid gap-3">
+          <p className="leading-relaxed">
+            Sign in to ask the guide. You’ll use your own Anthropic API key, kept in your browser.
+          </p>
+          <Link
+            href={`/sign-in?next=${encodeURIComponent(pathname)}`}
+            className={buttonVariants({ className: 'h-11 w-fit px-5' })}
+          >
+            Sign in
+          </Link>
+        </div>
+      ) : (
+        signedInChat
+      )}
     </section>
   );
 }

@@ -6,7 +6,7 @@ Stone & Star is a web app for exploring ancient sites in 3D: their measurements,
 
 The first site is **Giza**. Others follow once Giza is complete.
 
-> **Status:** early development (milestone 1). There's a home page, a placeholder Giza page and a plain chat guide. Every figure is placeholder data until it has been sourced and reviewed.
+> **Status:** early development (milestone 1). There's a home page, a placeholder Giza page, Google and GitHub sign-in, and a plain chat guide. Every figure is placeholder data until it has been sourced and reviewed.
 
 ## What it will do
 
