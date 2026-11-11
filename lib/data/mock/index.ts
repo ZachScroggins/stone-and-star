@@ -1,15 +1,16 @@
 import { z } from 'zod';
 
-import { Measurement, Site, Structure } from '@/lib/contracts/site';
+import { Anchor, Measurement, Site, Structure } from '@/lib/contracts/site';
 import type { SiteData } from '@/lib/data/types';
 
-import { gizaMeasurements, gizaSite, gizaStructures } from './giza';
+import { gizaAnchors, gizaMeasurements, gizaSite, gizaStructures } from './giza';
 
 // Parse once at module load, so mock data can't drift from the contracts:
 // a bad record fails the build, tests and dev server instead of rendering.
 const sites = z.array(Site).parse([gizaSite]);
 const structures = z.array(Structure).parse(gizaStructures);
 const measurements = z.array(Measurement).parse(gizaMeasurements);
+const anchors = z.array(Anchor).parse(gizaAnchors);
 
 function assertUnique(kind: string, slugs: string[]) {
   const seen = new Set<string>();
@@ -27,6 +28,10 @@ assertUnique(
   structures.map((s) => s.slug)
 );
 assertUnique(
+  'anchor',
+  anchors.map((a) => a.slug)
+);
+assertUnique(
   'measurement',
   measurements.map((m) => m.slug)
 );
@@ -39,6 +44,14 @@ for (const s of structures) {
 for (const m of measurements) {
   if (!structures.some((s) => s.slug === m.structureSlug)) {
     throw new Error(`Measurement ${m.slug} points at unknown structure ${m.structureSlug}`);
+  }
+}
+for (const a of anchors) {
+  if (!sites.some((site) => site.slug === a.siteSlug)) {
+    throw new Error(`Anchor ${a.slug} points at unknown site ${a.siteSlug}`);
+  }
+  if (a.structureSlug && !structures.some((s) => s.slug === a.structureSlug)) {
+    throw new Error(`Anchor ${a.slug} points at unknown structure ${a.structureSlug}`);
   }
 }
 const preferredKeys = measurements
@@ -59,4 +72,10 @@ export const mockSiteData: SiteData = {
   async getMeasurements(structureSlug) {
     return measurements.filter((m) => m.structureSlug === structureSlug);
   },
+  async listAnchors(siteSlug) {
+    return anchors.filter((a) => a.siteSlug === siteSlug);
+  },
 };
+
+/** Synchronous access for build scripts (model generator, terrain), which run outside Next. */
+export const mockRecords = { sites, structures, measurements, anchors };

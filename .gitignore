@@ -40,3 +40,6 @@ next-env.d.ts
 
 # example env file is committed
 !.env.example
+
+# raw downloaded datasets (rebuild with scripts/fetch-data.sh)
+/data/raw/

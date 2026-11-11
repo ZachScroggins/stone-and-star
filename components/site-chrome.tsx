@@ -15,10 +15,12 @@ export function SiteHeader({ siteName }: { siteName?: string }) {
         <LogoMark className="size-7" />
         <Wordmark />
         {siteName ? (
-          <span className="font-heading text-xl text-muted-foreground">· {siteName}</span>
+          <span className="hidden font-heading text-xl text-muted-foreground sm:inline">
+            · {siteName}
+          </span>
         ) : null}
       </Link>
-      <nav aria-label="Main" className="flex items-center gap-1">
+      <nav aria-label="Main" className="flex items-center gap-1 whitespace-nowrap">
         <Link
           href="/giza"
           className="flex min-h-11 items-center rounded-lg px-3 text-sm font-medium hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"

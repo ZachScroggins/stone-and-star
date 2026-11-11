@@ -63,6 +63,25 @@ export const Structure = Provenance.extend({
 }).superRefine(requireEvidenceWhenVerified);
 export type Structure = z.infer<typeof Structure>;
 
+export const ANCHOR_KINDS = ['structure-center', 'corner', 'viewpoint', 'marker'] as const;
+
+/**
+ * A named geographic point. Overlays, camera targets and generated models attach
+ * to anchors (never to mesh vertices), so regenerating a model never breaks data.
+ */
+export const Anchor = Provenance.extend({
+  slug: Slug,
+  siteSlug: Slug,
+  structureSlug: Slug.nullable().default(null),
+  name: z.string().min(1),
+  kind: z.enum(ANCHOR_KINDS),
+  lat: z.number().min(-90).max(90),
+  lon: z.number().min(-180).max(180),
+  /** Metres above mean sea level, if known. Otherwise the scene samples the terrain. */
+  elevationM: z.number().optional(),
+}).superRefine(requireEvidenceWhenVerified);
+export type Anchor = z.infer<typeof Anchor>;
+
 /** Open vocabulary (a lookup table later). Canonical units: metres and degrees. */
 export const MEASUREMENT_PROPERTIES = {
   'base-side-length': { label: 'Base side length', unit: 'm' },
