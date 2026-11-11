@@ -7,7 +7,7 @@ import { Button } from '@/components/ui/button';
 import { authClient } from '@/lib/auth/client';
 import { safeNextPath } from '@/lib/auth/redirect';
 
-type Provider = 'google' | 'github';
+export type Provider = 'google' | 'github';
 
 const PROVIDERS: { id: Provider; label: string; icon: React.ReactNode }[] = [
   {
@@ -45,13 +45,13 @@ const PROVIDERS: { id: Provider; label: string; icon: React.ReactNode }[] = [
   },
 ];
 
-export function SignInButtons() {
+export function SignInButtons({ providers }: { providers: Provider[] }) {
   const params = useSearchParams();
   const next = safeNextPath(params.get('next'));
   const returnedError = params.get('error');
   const [pending, setPending] = useState<Provider | null>(null);
   const [error, setError] = useState<string | null>(
-    returnedError ? 'Sign-in didn’t finish. Try again, or use the other provider.' : null
+    returnedError ? 'Sign-in didn’t finish. Try again.' : null
   );
 
   async function signIn(provider: Provider) {
@@ -75,7 +75,7 @@ export function SignInButtons() {
 
   return (
     <div className="grid gap-3">
-      {PROVIDERS.map((p) => (
+      {PROVIDERS.filter((p) => providers.includes(p.id)).map((p) => (
         <Button
           key={p.id}
           type="button"

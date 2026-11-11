@@ -1,11 +1,20 @@
 import type { Metadata } from 'next';
 import { Suspense } from 'react';
 
-import { SignInButtons } from '@/components/auth/sign-in-buttons';
+import { SignInButtons, type Provider } from '@/components/auth/sign-in-buttons';
 import { LogoMark } from '@/components/brand/logo-mark';
 import { SiteFooter, SiteHeader } from '@/components/site-chrome';
 
 export const metadata: Metadata = { title: 'Sign in' };
+
+/**
+ * Preview deploys get their own Neon branch and auth server, whose GitHub callback
+ * the GitHub OAuth app doesn't list. Google runs on Neon's shared keys and works on
+ * every branch, so previews offer Google only (decision 2026-11-11).
+ */
+function signInProviders(): Provider[] {
+  return process.env.VERCEL_ENV === 'preview' ? ['google'] : ['google', 'github'];
+}
 
 export default function SignInPage() {
   return (
@@ -21,7 +30,7 @@ export default function SignInPage() {
           </p>
           <div className="mt-8">
             <Suspense fallback={<div className="h-27" aria-hidden />}>
-              <SignInButtons />
+              <SignInButtons providers={signInProviders()} />
             </Suspense>
           </div>
           <p className="mt-6 text-sm text-muted-foreground">
