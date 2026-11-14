@@ -71,9 +71,9 @@ export default async function GizaPage() {
             {site.region} · {site.coordinates.lat.toFixed(4)}° N, {site.coordinates.lon.toFixed(4)}°
             E
           </p>
-          <p className="mt-5 text-lg leading-relaxed">{site.summary}</p>
+          <p className="mt-5 text-lg/relaxed">{site.summary}</p>
           {site.unverified ? (
-            <p className="mt-5 border-l-2 border-ember pl-4 text-sm leading-relaxed">
+            <p className="mt-5 border-l-2 border-ember pl-4 text-sm/relaxed">
               Every figure on this page is a placeholder used to build the site. None has been
               checked against a source yet, so don’t cite them.
             </p>
@@ -130,7 +130,7 @@ export default async function GizaPage() {
 
         <section
           aria-labelledby="credits-heading"
-          className="mt-16 max-w-3xl text-sm leading-relaxed text-muted-foreground"
+          className="mt-16 max-w-3xl text-sm/relaxed text-muted-foreground"
         >
           <h2 id="credits-heading" className="font-heading text-xl text-foreground">
             About the scene

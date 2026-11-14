@@ -18,15 +18,15 @@ The planning handoff in the vault is the source of truth: scope, architecture, d
 
 ## Commands
 
-| Command             | What it does                                                            |
-| ------------------- | ----------------------------------------------------------------------- |
-| `npm run dev`       | Dev server on http://localhost:3000                                     |
-| `npm run dev:local` | Dev server on 127.0.0.1 with the guide on the owner's Claude Code login |
-| `npm run build`     | Production build                                                        |
-| `npm run lint`      | ESLint                                                                  |
-| `npm run typecheck` | `tsc --noEmit`                                                          |
-| `npm test`          | Vitest, single run                                                      |
-| `npm run format`    | Prettier on the whole repo                                              |
+| Command             | What it does                                                             |
+| ------------------- | ------------------------------------------------------------------------ |
+| `npm run dev`       | Dev server on http://localhost:3000                                      |
+| `npm run dev:local` | Dev server on 127.0.0.1 with the guide on the owner's Claude Code login  |
+| `npm run build`     | Production build                                                         |
+| `npm run lint`      | ESLint, including Tailwind canonical-class checks (`better-tailwindcss`) |
+| `npm run typecheck` | `tsc --noEmit`                                                           |
+| `npm test`          | Vitest, single run                                                       |
+| `npm run format`    | ESLint layout fixes (canonical Tailwind classes), then Prettier          |
 
 Node 22 or later (`engines` in `package.json`; the Claude Code provider needs it). Use npm. Environment variables are listed in `.env.example`; copy it to `.env.local`.
 

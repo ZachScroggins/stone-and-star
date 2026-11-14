@@ -31,7 +31,7 @@ export function LayerBar({
   onView: (v: SceneState['view']) => void;
 }) {
   return (
-    <div className="pointer-events-auto flex gap-2 overflow-x-auto pb-1 [scrollbar-width:none]">
+    <div className="pointer-events-auto flex gap-2 overflow-x-auto pb-1 scrollbar-none">
       <div role="group" aria-label="View" className="flex gap-2">
         {(
           [

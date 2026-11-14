@@ -233,7 +233,7 @@ export function SkyConsole(props: Props) {
               aria-pressed={activeSeason === e}
               onClick={() => props.onSkyTime({ dayOfYear: seasonDays[e] })}
               className={cn(
-                'min-h-11 rounded-lg border border-white/10 px-2 text-xs leading-tight text-[oklch(0.82_0.03_85)] hover:bg-white/10 focus-visible:ring-2 focus-visible:ring-[oklch(0.8_0.12_85)] focus-visible:outline-none',
+                'min-h-11 rounded-lg border border-white/10 px-2 text-xs/tight text-[oklch(0.82_0.03_85)] hover:bg-white/10 focus-visible:ring-2 focus-visible:ring-[oklch(0.8_0.12_85)] focus-visible:outline-none',
                 'aria-pressed:border-[oklch(0.8_0.12_85/0.6)] aria-pressed:bg-[oklch(0.8_0.12_85/0.14)] aria-pressed:text-[oklch(0.97_0.02_85)]'
               )}
             >

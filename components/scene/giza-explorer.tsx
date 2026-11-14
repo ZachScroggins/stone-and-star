@@ -248,7 +248,7 @@ export default function GizaExplorer(props: GizaExplorerProps) {
         </p>
       )}
 
-      <div className="pointer-events-none absolute inset-x-0 top-20 z-10 px-4 sm:top-[4.5rem] sm:px-6">
+      <div className="pointer-events-none absolute inset-x-0 top-20 z-10 px-4 sm:top-18 sm:px-6">
         <LayerBar
           state={state}
           hasSurviving={hasSurviving}

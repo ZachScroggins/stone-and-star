@@ -159,7 +159,7 @@ export function WalkPad({
       <div
         id={infoId}
         hidden={!showInfo}
-        className="pointer-events-auto max-w-80 rounded-xl border border-white/10 bg-[oklch(0.16_0.012_60/0.7)] px-3 py-2 text-right text-xs leading-relaxed backdrop-blur-md"
+        className="pointer-events-auto max-w-80 rounded-xl border border-white/10 bg-[oklch(0.16_0.012_60/0.7)] px-3 py-2 text-right text-xs/relaxed backdrop-blur-md"
       >
         {sight ? (
           <p className="tabular-nums">
