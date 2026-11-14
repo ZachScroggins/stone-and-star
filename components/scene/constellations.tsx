@@ -3,7 +3,7 @@
 import { Html, Line } from '@react-three/drei';
 import { useMemo } from 'react';
 
-import { figureSegments, type ConstellationSetV1 } from '@/lib/astro/constellations';
+import { figureSegments, type SkyFigure, type SkyFiguresV1 } from '@/lib/astro/constellations';
 
 import { SKY_RADIUS } from './sky';
 import type { SkyResult, StarAttributes } from './use-sky';
@@ -47,8 +47,26 @@ function visiblePart(a: V3, b: V3): [V3, V3] | null {
   return [a, b];
 }
 
+type Label = {
+  key: string;
+  kind: SkyFigure['kind'] | 'star';
+  name: string;
+  english: string;
+  position: V3;
+};
+
+const labelBase =
+  'pointer-events-none whitespace-nowrap text-[oklch(0.88_0.05_255)] select-none [text-shadow:0_1px_4px_rgb(0_0_0/0.9)]';
+const labelStyle: Record<Label['kind'], string> = {
+  constellation: 'font-display text-sm tracking-[0.08em]',
+  // Asterisms are informal patterns, so they read quieter than the IAU names.
+  asterism: 'text-xs italic tracking-wide',
+  // Beside the star, not on it.
+  star: 'ml-2 inline-block -translate-y-1/2 text-xs',
+};
+
 /**
- * Zodiac stick figures and names on the sky dome. Rendered inside the Sky group,
+ * Stick figures (zodiac constellations and asterisms) and names on the sky dome. Rendered inside the Sky group,
  * which follows the camera, so directions only need scaling to the dome radius.
  */
 export function Constellations({
@@ -59,7 +77,7 @@ export function Constellations({
 }: {
   sky: SkyResult;
   stars: StarAttributes;
-  figures: ConstellationSetV1;
+  figures: SkyFiguresV1;
   /** 0–1: fades the figures in daylight. */
   visibility: number;
 }) {
@@ -67,8 +85,9 @@ export function Constellations({
   const indexed = useMemo(() => {
     const index = new Map<number, number>();
     stars.hip.forEach((hip, i) => index.set(hip, i));
-    return figures.constellations.map((c) => ({
-      abbr: c.abbr,
+    const shapes = figures.figures.map((c) => ({
+      id: c.id,
+      kind: c.kind,
       name: c.name,
       english: c.english,
       pairs: figureSegments(c).flatMap(([a, b]) => {
@@ -78,14 +97,19 @@ export function Constellations({
       }),
       members: [...new Set(c.lines.flat())].flatMap((h) => index.get(h) ?? []),
     }));
+    const named = figures.stars.flatMap((s) => {
+      const i = index.get(s.hip);
+      return i === undefined ? [] : [{ ...s, index: i }];
+    });
+    return { shapes, named };
   }, [figures, stars]);
 
   const { points, labels } = useMemo(() => {
     const p = sky.positions;
     const dir = (i: number): V3 => [p[i * 3], p[i * 3 + 1], p[i * 3 + 2]];
     const pts: V3[] = [];
-    const lbl: { abbr: string; name: string; english: string; position: V3 }[] = [];
-    for (const fig of indexed) {
+    const lbl: Label[] = [];
+    for (const fig of indexed.shapes) {
       for (const [ia, ib] of fig.pairs) {
         const seg = visiblePart(dir(ia), dir(ib));
         if (!seg) continue;
@@ -105,12 +129,24 @@ export function Constellations({
         // Just below the figure's centre, so the name does not cover its brightest stars.
         const below = normalize([c[0], c[1] - 0.035, c[2]]);
         lbl.push({
-          abbr: fig.abbr,
+          key: fig.id,
+          kind: fig.kind,
           name: fig.name,
           english: fig.english,
           position: [below[0] * R, below[1] * R, below[2] * R],
         });
       }
+    }
+    for (const s of indexed.named) {
+      const d = dir(s.index);
+      if (d[1] <= LABEL_MIN_Y) continue;
+      lbl.push({
+        key: `HIP-${s.hip}`,
+        kind: 'star',
+        name: s.name,
+        english: `HIP ${s.hip}`,
+        position: [d[0] * R, d[1] * R, d[2] * R],
+      });
     }
     return { points: pts, labels: lbl };
   }, [sky, indexed]);
@@ -135,9 +171,9 @@ export function Constellations({
       {labels.map((l) => (
         // Click-through: drags and wheel steps over a name still reach the canvas.
         <Html
-          key={l.abbr}
+          key={l.key}
           position={l.position}
-          center
+          center={l.kind !== 'star'}
           zIndexRange={[4, 0]}
           pointerEvents="none"
           style={{ pointerEvents: 'none' }}
@@ -145,7 +181,7 @@ export function Constellations({
           <span
             title={l.english}
             style={{ opacity: Math.max(0.35, visibility) }}
-            className="pointer-events-none font-display text-sm tracking-[0.08em] whitespace-nowrap text-[oklch(0.88_0.05_255)] select-none [text-shadow:0_1px_4px_rgb(0_0_0/0.9)]"
+            className={`${labelBase} ${labelStyle[l.kind]}`}
           >
             {l.name}
           </span>

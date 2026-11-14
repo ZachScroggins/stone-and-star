@@ -12,7 +12,7 @@ import {
   type DirectionalLight,
 } from 'three';
 
-import type { ConstellationSetV1 } from '@/lib/astro/constellations';
+import type { SkyFiguresV1 } from '@/lib/astro/constellations';
 import type { TerrainV1 } from '@/lib/scene/terrain';
 import type { WalkPose, WalkWorld } from '@/lib/scene/walk';
 
@@ -44,7 +44,7 @@ export interface SceneCanvasProps {
   dimensions: DimensionSpec[];
   sky: SkyResult | null;
   stars: StarAttributes | null;
-  constellations: ConstellationSetV1 | null;
+  constellations: SkyFiguresV1 | null;
   layers: { labels: boolean; dimensions: boolean; skyDome: boolean; constellations: boolean };
   focusTarget: [number, number, number];
   view: 'overview' | 'sky';

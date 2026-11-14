@@ -9,7 +9,7 @@ export const SCENE_LAYERS = [
   'alignment',
   'skyDome',
   'labels',
-  /** Added in M2: zodiac stick figures and names. */
+  /** Added in M2: zodiac and asterism stick figures, their names, and named stars. */
   'constellations',
 ] as const;
 export const PANEL_TABS = ['facts', 'sky', 'timeline', 'views'] as const;

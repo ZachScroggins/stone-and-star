@@ -3,7 +3,7 @@
 import dynamic from 'next/dynamic';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
-import { ConstellationSetV1, ZODIAC_CONSTELLATIONS_URL } from '@/lib/astro/constellations';
+import { SKY_FIGURES_URL, SkyFiguresV1 } from '@/lib/astro/constellations';
 import type { Anchor, Measurement } from '@/lib/contracts/site';
 import { fromLocal, toLocal } from '@/lib/geo/local';
 import { modelManifestUrl, ModelManifestV1 } from '@/lib/models/manifest';
@@ -72,7 +72,7 @@ export default function GizaExplorer(props: GizaExplorerProps) {
 
   const terrain = useJson(GIZA_TERRAIN_URL, (j) => TerrainV1.parse(j));
   const manifest = useJson(modelManifestUrl(props.siteSlug), (j) => ModelManifestV1.parse(j));
-  const zodiac = useJson(ZODIAC_CONSTELLATIONS_URL, (j) => ConstellationSetV1.parse(j));
+  const skyFigures = useJson(SKY_FIGURES_URL, (j) => SkyFiguresV1.parse(j));
   const heights = useMemo(
     () => (terrain.data ? decodeHeights(terrain.data) : null),
     [terrain.data]
@@ -230,7 +230,7 @@ export default function GizaExplorer(props: GizaExplorerProps) {
           dimensions={dimensions}
           sky={sky.result}
           stars={sky.attributes}
-          constellations={zodiac.data}
+          constellations={skyFigures.data}
           layers={state.layers}
           focusTarget={focusTarget}
           view={state.view}

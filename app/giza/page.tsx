@@ -139,8 +139,9 @@ export default async function GizaPage() {
             The pyramids are schematic models generated from the placeholder measurements above, not
             surveys. Stars: ESA, The Hipparcos and Tycho Catalogues (1997). Terrain: Copernicus
             GLO-30 DEM, © DLR e.V. 2010-2014 and © Airbus Defence and Space GmbH 2014-2018, provided
-            under COPERNICUS by the European Union and ESA; all rights reserved. Zodiac figures:
-            Stellarium&rsquo;s team, Stellarium 26.3 &ldquo;modern&rdquo; sky culture, CC BY-SA 4.0.
+            under COPERNICUS by the European Union and ESA; all rights reserved. Constellation
+            figures and star names: Stellarium&rsquo;s team, Stellarium 26.3 &ldquo;modern&rdquo;
+            sky culture, CC BY-SA 4.0.
           </p>
         </section>
       </main>

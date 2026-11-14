@@ -96,7 +96,7 @@ Tests sit next to the code as `*.test.ts`.
 Raw downloads live in `data/raw/` (gitignored); built outputs are committed. To rebuild:
 
 1. `scripts/fetch-data.sh` downloads and checksums the Hipparcos subset, the Copernicus tile and Stellarium's modern sky culture.
-2. `npx tsx scripts/build-stars.ts` and `npx tsx scripts/build-terrain.ts` write `public/data/`; then `npx tsx scripts/build-constellations.ts` (zodiac figures from Stellarium's sky culture, checked against the star catalog).
+2. `npx tsx scripts/build-stars.ts` and `npx tsx scripts/build-terrain.ts` write `public/data/`; then `npx tsx scripts/build-constellations.ts` (zodiac and asterism figures and star names from Stellarium's sky culture, checked against the star catalog).
 3. `npx tsx scripts/generate-models.ts` writes the glTF models and manifest from the mock measurements and anchors.
 4. `npx tsx scripts/stellarium-reference.ts` re-records the Stellarium fixture (needs Stellarium and the config described in the script). Run it only when the test cases change.
 
