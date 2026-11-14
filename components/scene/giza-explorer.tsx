@@ -248,7 +248,7 @@ export default function GizaExplorer(props: GizaExplorerProps) {
         </p>
       )}
 
-      <div className="pointer-events-none absolute inset-x-0 top-16 z-10 px-4 sm:top-[4.5rem] sm:px-6">
+      <div className="pointer-events-none absolute inset-x-0 top-20 z-10 px-4 sm:top-[4.5rem] sm:px-6">
         <LayerBar
           state={state}
           hasSurviving={hasSurviving}
@@ -258,16 +258,17 @@ export default function GizaExplorer(props: GizaExplorerProps) {
         />
       </div>
 
-      {state.view === 'sky' && placed ? (
-        <WalkPad
-          sight={sight}
-          moved={state.standpoint !== null}
-          onReset={() => dispatch({ type: 'setStandpoint', standpoint: null })}
-          className="absolute top-36 right-3 z-10 sm:top-auto sm:right-4 sm:bottom-4"
-        />
-      ) : null}
-
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 p-3 sm:bottom-4 sm:left-4 sm:p-0">
+      {/* Phones: walk pad and readout stacked above the sky console.
+          Wider screens: console bottom-left, walk pad bottom-right. */}
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 flex flex-col gap-2 p-3 sm:inset-x-4 sm:bottom-4 sm:flex-row sm:items-end sm:justify-between sm:p-0">
+        {state.view === 'sky' && placed ? (
+          <WalkPad
+            sight={sight}
+            moved={state.standpoint !== null}
+            onReset={() => dispatch({ type: 'setStandpoint', standpoint: null })}
+            className="self-end sm:order-last"
+          />
+        ) : null}
         <SkyConsole
           epoch={state.epoch}
           dayOfYear={state.sky.dayOfYear}

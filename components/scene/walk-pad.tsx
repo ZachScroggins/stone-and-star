@@ -1,7 +1,7 @@
 'use client';
 
-import { ArrowDown, ArrowUp, LocateFixed, RotateCcw, RotateCw } from 'lucide-react';
-import type { KeyboardEvent, ReactNode } from 'react';
+import { ArrowDown, ArrowUp, Info, LocateFixed, RotateCcw, RotateCw } from 'lucide-react';
+import { useId, useState, type KeyboardEvent, type ReactNode } from 'react';
 
 import type { WalkInput } from '@/lib/scene/walk';
 import { cn } from '@/lib/utils';
@@ -63,6 +63,28 @@ function HoldButton({
   );
 }
 
+const roundButton =
+  'flex size-11 items-center justify-center rounded-full border border-white/15 bg-[oklch(0.16_0.012_60/0.7)] backdrop-blur-md transition-colors hover:bg-[oklch(0.22_0.012_60/0.85)] focus-visible:ring-2 focus-visible:ring-[oklch(0.8_0.12_85)] focus-visible:outline-none';
+
+/** Whether the readout and tips are shown; remembered per browser. */
+const INFO_KEY = 'stone-and-star:walk-info';
+
+function readInfoPref() {
+  try {
+    return window.localStorage.getItem(INFO_KEY) !== 'off';
+  } catch {
+    return true;
+  }
+}
+
+function writeInfoPref(on: boolean) {
+  try {
+    window.localStorage.setItem(INFO_KEY, on ? 'on' : 'off');
+  } catch {
+    // Storage blocked (private mode): the choice lasts for this visit only.
+  }
+}
+
 export interface SightReadout {
   name: string;
   distance: number;
@@ -83,6 +105,9 @@ export function WalkPad({
   onReset: () => void;
   className?: string;
 }) {
+  // The explorer renders only in the browser, so reading storage here is safe.
+  const [showInfo, setShowInfo] = useState(readInfoPref);
+  const infoId = useId();
   return (
     <div
       className={cn(
@@ -106,15 +131,36 @@ export function WalkPad({
           disabled={!moved}
           aria-label="Back to the starting point"
           title="Back to the starting point"
-          className="flex size-11 items-center justify-center rounded-full border border-white/15 bg-[oklch(0.16_0.012_60/0.7)] backdrop-blur-md transition-colors hover:bg-[oklch(0.22_0.012_60/0.85)] focus-visible:ring-2 focus-visible:ring-[oklch(0.8_0.12_85)] focus-visible:outline-none disabled:opacity-40"
+          className={cn(roundButton, 'disabled:opacity-40')}
         >
           <LocateFixed aria-hidden className="size-4" />
         </button>
         <HoldButton move="back" label="Walk back">
           <ArrowDown aria-hidden className="size-5" />
         </HoldButton>
+        <button
+          type="button"
+          aria-pressed={showInfo}
+          aria-controls={infoId}
+          aria-label="Distance readout and tips"
+          title={showInfo ? 'Hide the readout and tips' : 'Show the readout and tips'}
+          onClick={() => {
+            setShowInfo(!showInfo);
+            writeInfoPref(!showInfo);
+          }}
+          className={cn(
+            roundButton,
+            'aria-pressed:border-[oklch(0.8_0.12_85/0.7)] aria-pressed:bg-[oklch(0.8_0.12_85/0.22)]'
+          )}
+        >
+          <Info aria-hidden className="size-4" />
+        </button>
       </div>
-      <div className="rounded-xl border border-white/10 bg-[oklch(0.16_0.012_60/0.7)] px-3 py-2 text-right text-xs leading-relaxed backdrop-blur-md">
+      <div
+        id={infoId}
+        hidden={!showInfo}
+        className="pointer-events-auto max-w-80 rounded-xl border border-white/10 bg-[oklch(0.16_0.012_60/0.7)] px-3 py-2 text-right text-xs leading-relaxed backdrop-blur-md"
+      >
         {sight ? (
           <p className="tabular-nums">
             {sight.name}: {Math.round(sight.distance)} m, bearing {Math.round(sight.bearingDeg)}°,

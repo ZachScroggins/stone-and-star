@@ -7,23 +7,24 @@ import { cn } from '@/lib/utils';
 
 export function SiteHeader({ siteName }: { siteName?: string }) {
   return (
-    <header className="mx-auto flex w-full max-w-6xl items-center justify-between gap-4 px-5 py-3 sm:px-8">
+    <header className="mx-auto flex w-full max-w-6xl items-center justify-between gap-2 px-4 py-3 sm:gap-4 sm:px-8">
       <Link
         href="/"
-        className="-mx-2 flex min-h-11 items-center gap-2.5 rounded-lg px-2 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
+        className="-mx-2 flex min-h-11 shrink-0 items-center gap-2 rounded-lg px-2 whitespace-nowrap focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
       >
         <LogoMark className="size-7" />
-        <Wordmark />
+        {/* One line on phones, so the header keeps its height and the scene controls clear it. */}
+        <Wordmark className="text-lg sm:text-xl" />
         {siteName ? (
           <span className="hidden font-heading text-xl text-muted-foreground sm:inline">
             · {siteName}
           </span>
         ) : null}
       </Link>
-      <nav aria-label="Main" className="flex items-center gap-1 whitespace-nowrap">
+      <nav aria-label="Main" className="flex items-center gap-0.5 whitespace-nowrap sm:gap-1">
         <Link
           href="/giza"
-          className="flex min-h-11 items-center rounded-lg px-3 text-sm font-medium hover:bg-muted focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
+          className="flex min-h-11 items-center rounded-lg px-2 text-sm font-medium hover:bg-muted sm:px-3 focus-visible:ring-3 focus-visible:ring-ring/50 focus-visible:outline-none"
         >
           Giza
         </Link>
