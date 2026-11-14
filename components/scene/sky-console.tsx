@@ -143,7 +143,7 @@ export function SkyConsole(props: Props) {
     <section
       aria-label="Sky date and time"
       data-theme="egypt"
-      className="dark pointer-events-auto w-full rounded-2xl border border-white/10 bg-[oklch(0.16_0.012_60/0.78)] p-4 text-[oklch(0.9_0.02_85)] shadow-[0_20px_60px_-20px_rgb(0_0_0/0.7)] backdrop-blur-md sm:w-[25rem] sm:p-5"
+      className="dark pointer-events-auto w-full rounded-2xl border border-white/10 bg-[oklch(0.16_0.012_60/0.78)] p-4 text-[oklch(0.9_0.02_85)] shadow-[0_20px_60px_-20px_rgb(0_0_0/0.7)] backdrop-blur-md sm:w-100 sm:p-5"
     >
       <div className="flex items-end justify-between gap-2">
         <YearInput epoch={epoch} onEpoch={props.onEpoch} />
@@ -267,7 +267,7 @@ export function SkyConsole(props: Props) {
           step={0.25}
           value={[solarHour]}
           onValueChange={(v) => props.onSkyTime({ solarHour: Array.isArray(v) ? v[0] : v })}
-          className="relative [&_[data-slot=slider-range]]:bg-transparent [&_[data-slot=slider-thumb]]:size-5 [&_[data-slot=slider-thumb]]:border-2 [&_[data-slot=slider-thumb]]:border-[oklch(0.16_0.012_60)] [&_[data-slot=slider-track]]:h-3 [&_[data-slot=slider-track]]:bg-transparent"
+          className="relative **:data-[slot=slider-range]:bg-transparent **:data-[slot=slider-thumb]:size-5 **:data-[slot=slider-thumb]:border-2 **:data-[slot=slider-thumb]:border-[oklch(0.16_0.012_60)] **:data-[slot=slider-track]:h-3 **:data-[slot=slider-track]:bg-transparent"
         />
       </div>
       <div className="mt-1.5 flex justify-between text-xs text-[oklch(0.68_0.03_80)] tabular-nums">
