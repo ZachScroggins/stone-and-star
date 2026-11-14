@@ -62,7 +62,7 @@ function YearInput({ epoch, onEpoch }: { epoch: number; onEpoch: (y: number) => 
   };
 
   return (
-    <div className="flex items-end gap-3">
+    <div className="flex items-end gap-2 sm:gap-3">
       <label className="sr-only" htmlFor="epoch-year">
         Year
       </label>
@@ -78,7 +78,7 @@ function YearInput({ epoch, onEpoch }: { epoch: number; onEpoch: (y: number) => 
         onKeyDown={(e) => {
           if (e.key === 'Enter') e.currentTarget.blur();
         }}
-        className="w-[5.5ch] min-w-0 bg-transparent font-display text-4xl leading-none sm:text-5xl font-semibold tracking-wide text-[oklch(0.95_0.03_85)] tabular-nums outline-none focus-visible:underline focus-visible:decoration-[oklch(0.8_0.12_85)] focus-visible:underline-offset-8"
+        className="w-[4.6ch] min-w-0 bg-transparent tracking-normal sm:w-[4.8ch] font-display text-[2rem] leading-none sm:text-5xl font-semibold sm:tracking-wide text-[oklch(0.95_0.03_85)] tabular-nums outline-none focus-visible:underline focus-visible:decoration-[oklch(0.8_0.12_85)] focus-visible:underline-offset-8"
       />
       <ToggleGroup
         value={[era]}
@@ -94,7 +94,7 @@ function YearInput({ epoch, onEpoch }: { epoch: number; onEpoch: (y: number) => 
           <ToggleGroupItem
             key={e}
             value={e}
-            className="h-11 min-w-11 px-2.5 text-sm text-[oklch(0.8_0.03_85)] data-pressed:bg-[oklch(0.95_0.03_85/0.14)] data-pressed:text-[oklch(0.97_0.02_85)]"
+            className="h-11 min-w-11 px-2 text-sm sm:px-2.5 text-[oklch(0.8_0.03_85)] data-pressed:bg-[oklch(0.95_0.03_85/0.14)] data-pressed:text-[oklch(0.97_0.02_85)]"
           >
             {e}
           </ToggleGroupItem>
@@ -143,11 +143,12 @@ export function SkyConsole(props: Props) {
     <section
       aria-label="Sky date and time"
       data-theme="egypt"
-      className="dark pointer-events-auto w-full rounded-2xl border border-white/10 bg-[oklch(0.16_0.012_60/0.78)] p-4 text-[oklch(0.9_0.02_85)] shadow-[0_20px_60px_-20px_rgb(0_0_0/0.7)] backdrop-blur-md sm:w-100 sm:p-5"
+      className="dark pointer-events-auto w-full rounded-2xl border border-white/10 bg-[oklch(0.16_0.012_60/0.78)] p-4 text-[oklch(0.9_0.02_85)] shadow-[0_20px_60px_-20px_rgb(0_0_0/0.7)] backdrop-blur-md sm:w-104 sm:p-5"
     >
-      <div className="flex items-end justify-between gap-2">
+      {/* Below about 340 px the nudge buttons wrap under the year instead of overflowing. */}
+      <div className="flex flex-wrap items-end justify-between gap-2">
         <YearInput epoch={epoch} onEpoch={props.onEpoch} />
-        <div className="flex gap-1">
+        <div className="ml-auto flex sm:gap-1">
           <button
             type="button"
             onClick={() => nudge(-100)}
