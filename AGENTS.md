@@ -18,6 +18,8 @@ The planning handoff in the vault is the source of truth: scope, architecture, d
 
 ## Commands
 
+**Default to `npm run dev:local` in development.** It runs the guide on the owner's Claude Code login, so testing chat costs nothing on the Anthropic API key. Use `npm run dev` (API path) only when a task needs the API path itself: checking `@ai-sdk/anthropic` behaviour, custom AI SDK tools (the local provider only takes MCP tools), visitor-key handling, or running evals.
+
 | Command             | What it does                                                             |
 | ------------------- | ------------------------------------------------------------------------ |
 | `npm run dev`       | Dev server on http://localhost:3000                                      |
