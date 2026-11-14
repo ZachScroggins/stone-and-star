@@ -48,3 +48,28 @@ describe('mock site data', () => {
     expect(result.success).toBe(false);
   });
 });
+
+describe('panel data', () => {
+  it('collects everything the Giza panel shows, and every tab has data', async () => {
+    const { getPanelData, availableTabs } = await import('../panel');
+    const panel = await getPanelData(mockSiteData, 'giza');
+    expect(availableTabs(panel)).toEqual({ facts: true, sky: true, timeline: true, views: true });
+    expect(panel.proponents.map((p) => p.slug)).toContain('robert-schoch');
+    expect(panel.sources.map((s) => s.slug)).toContain('schoch-forgotten-civilization');
+    // Placeholders stay flagged.
+    for (const list of [panel.claims, panel.questions, panel.timeline, panel.alignments]) {
+      for (const r of list) expect(r.unverified).toBe(true);
+    }
+  });
+
+  it('hides every tab for a site with no data', async () => {
+    const { getPanelData, availableTabs } = await import('../panel');
+    const panel = await getPanelData(mockSiteData, 'atlantis');
+    expect(availableTabs(panel)).toEqual({
+      facts: false,
+      sky: false,
+      timeline: false,
+      views: false,
+    });
+  });
+});
