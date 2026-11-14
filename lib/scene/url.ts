@@ -1,9 +1,17 @@
-import { MODEL_CONDITIONS, SCENE_LAYERS, SCENE_VIEWS, SceneStateV1 } from './actions';
+import {
+  MODEL_CONDITIONS,
+  PANEL_SIZES,
+  PANEL_TABS,
+  SCENE_LAYERS,
+  SCENE_VIEWS,
+  SceneStateV1,
+} from './actions';
 import type { SceneState } from './state';
 
 // Shareable scene links. Readable query parameters, versioned with `v`:
 //   ?v=1&year=-2559&day=172&hour=21.5&layers=labels,skyDome&focus=great-pyramid-center&model=as_built&view=sky
 //   &at=29.976012,31.137021&look=315,25   (standpoint: lat,lon and heading,pitch in degrees)
+//   &panel=views.phone                     (info panel tab and size; omitted when it is the default)
 // Unknown or invalid parameters fall back to the current state's values.
 
 const round = (x: number, digits: number) => Number(x.toFixed(digits));
@@ -22,6 +30,15 @@ function standpointFrom(params: URLSearchParams, fallback: SceneState['standpoin
   return { lat: at[0], lon: at[1], heading: look[0], pitch: look[1] };
 }
 
+function panelFrom(raw: string | null, fallback: SceneState['panel']): SceneState['panel'] {
+  if (!raw) return fallback;
+  const [tab, size] = raw.split('.');
+  return (PANEL_TABS as readonly string[]).includes(tab) &&
+    (PANEL_SIZES as readonly string[]).includes(size)
+    ? { tab: tab as SceneState['panel']['tab'], size: size as SceneState['panel']['size'] }
+    : fallback;
+}
+
 export function sceneToSearchParams(state: SceneState): URLSearchParams {
   const p = new URLSearchParams();
   p.set('v', '1');
@@ -33,6 +50,9 @@ export function sceneToSearchParams(state: SceneState): URLSearchParams {
   if (state.target) p.set('target', state.target);
   p.set('model', state.condition);
   if (state.view !== 'overview') p.set('view', state.view);
+  if (state.panel.tab !== 'facts' || state.panel.size !== 'icon') {
+    p.set('panel', `${state.panel.tab}.${state.panel.size}`);
+  }
   if (state.standpoint) {
     const { lat, lon, heading, pitch } = state.standpoint;
     p.set('at', `${round(lat, 6)},${round(lon, 6)}`);
@@ -72,6 +92,7 @@ export function sceneFromSearchParams(params: URLSearchParams, fallback: SceneSt
       ? (view as SceneState['view'])
       : 'overview',
     standpoint: standpointFrom(params, fallback.standpoint),
+    panel: panelFrom(params.get('panel'), fallback.panel),
   };
   const parsed = SceneStateV1.safeParse(candidate);
   if (!parsed.success) return fallback;
