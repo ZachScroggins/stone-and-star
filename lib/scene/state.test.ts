@@ -19,6 +19,11 @@ describe('reduceScene', () => {
     expect(s.focus).toBe('khafre-pyramid-center');
     s = reduceScene(s, { type: 'openPanel', tab: 'sky' });
     expect(s.panel).toEqual({ tab: 'sky', size: 'icon' });
+    const at = { lat: 29.976, lon: 31.137, heading: 300, pitch: 20 };
+    s = reduceScene(s, { type: 'setStandpoint', standpoint: at });
+    expect(s.standpoint).toEqual(at);
+    s = reduceScene(s, { type: 'setStandpoint', standpoint: null });
+    expect(s.standpoint).toBeNull();
   });
 
   it('does not mutate the previous state', () => {
@@ -37,9 +42,29 @@ describe('scene URL state', () => {
       focus: 'great-pyramid-center',
       condition: 'as_built' as const,
       view: 'sky' as const,
+      standpoint: { lat: 29.976012, lon: 31.137021, heading: 297.5, pitch: 18.2 },
     };
     const params = new URLSearchParams(sceneToSearchParams(s).toString());
+    expect(params.get('at')).toBe('29.976012,31.137021');
+    expect(params.get('look')).toBe('297.5,18.2');
     expect(sceneFromSearchParams(params, base)).toEqual(s);
+  });
+
+  it('reads links from before the standpoint and constellations were added', () => {
+    const s = sceneFromSearchParams(
+      new URLSearchParams('v=1&year=-2559&layers=labels,skyDome&view=sky'),
+      base
+    );
+    expect(s.standpoint).toBeNull();
+    expect(s.layers.constellations).toBe(false);
+    expect(s.layers.skyDome).toBe(true);
+    expect(s.view).toBe('sky');
+  });
+
+  it('defaults the look direction and rejects an out-of-range standpoint', () => {
+    const s = sceneFromSearchParams(new URLSearchParams('v=1&at=29.97,31.13'), base);
+    expect(s.standpoint).toEqual({ lat: 29.97, lon: 31.13, heading: 315, pitch: 25 });
+    expect(sceneFromSearchParams(new URLSearchParams('v=1&at=99,31.13'), base)).toBe(base);
   });
 
   it('falls back on invalid or unversioned input', () => {

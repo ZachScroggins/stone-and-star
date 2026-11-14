@@ -1,20 +1,40 @@
 'use client';
 
 import { OrbitControls } from '@react-three/drei';
-import { Canvas, useFrame, useThree } from '@react-three/fiber';
-import { Suspense, useEffect, useMemo, useRef } from 'react';
-import { Color, PCFShadowMap, Vector3, type DirectionalLight, type PerspectiveCamera } from 'three';
-import type { OrbitControls as OrbitControlsImpl } from 'three-stdlib';
+import { Canvas } from '@react-three/fiber';
+import { Suspense, useEffect, useRef } from 'react';
+import {
+  Color,
+  PCFShadowMap,
+  Vector3,
+  getConsoleFunction,
+  setConsoleFunction,
+  type DirectionalLight,
+} from 'three';
 
+import type { ConstellationSetV1 } from '@/lib/astro/constellations';
 import type { TerrainV1 } from '@/lib/scene/terrain';
+import type { WalkPose, WalkWorld } from '@/lib/scene/walk';
 
+import { CameraRig, OVERVIEW_FOV } from './camera-rig';
+import { Constellations } from './constellations';
 import { Dimensions, Labels, SkyGrid, type AnchorMarker, type DimensionSpec } from './overlays';
-import { Sky, daylight, dirFromAltAz, horizonColor } from './sky';
+import { Sky, daylight, dirFromAltAz, horizonColor, starVisibility } from './sky';
 import { Structures, type PlacedModel } from './structures';
 import { Terrain } from './terrain';
 import type { SkyResult, StarAttributes } from './use-sky';
 
 const DEG = Math.PI / 180;
+
+// @react-three/fiber 9 still creates a THREE.Clock, which three r183+ flags as
+// deprecated on every canvas. Drop that one message and pass everything else on.
+// Remove once fiber ships its Timer-based store (v10).
+if (!getConsoleFunction()) {
+  setConsoleFunction((method: 'log' | 'warn' | 'error', message: string, ...params: unknown[]) => {
+    if (method === 'warn' && message.startsWith('THREE.Clock:')) return;
+    console[method](message, ...params);
+  });
+}
 
 export interface SceneCanvasProps {
   terrain: TerrainV1;
@@ -24,11 +44,15 @@ export interface SceneCanvasProps {
   dimensions: DimensionSpec[];
   sky: SkyResult | null;
   stars: StarAttributes | null;
-  layers: { labels: boolean; dimensions: boolean; skyDome: boolean };
+  constellations: ConstellationSetV1 | null;
+  layers: { labels: boolean; dimensions: boolean; skyDome: boolean; constellations: boolean };
   focusTarget: [number, number, number];
   view: 'overview' | 'sky';
-  /** Where the viewer stands in sky view (scene metres, eye height included). */
-  skyEye: [number, number, number];
+  /** Where the viewer stands and looks in sky view (scene metres, radians). */
+  standpoint: WalkPose;
+  walkWorld: WalkWorld;
+  groundAt: (x: number, z: number) => number;
+  onStandpoint: (pose: WalkPose) => void;
   focus: string | null;
   highlights: string[];
   onFocus: (slug: string) => void;
@@ -87,94 +111,6 @@ function Lights({ sky }: { sky: SkyResult | null }) {
   );
 }
 
-const OVERVIEW_FOV = 45;
-const SKY_FOV = 70;
-
-/**
- * Drives the camera. Overview: orbit, easing the target to the focused anchor.
- * Sky: stand at eye height on the plateau; dragging turns the head (the orbit
- * target sits 1 m in front of the eye).
- */
-function CameraRig({
-  view,
-  target,
-  eye,
-}: {
-  view: 'overview' | 'sky';
-  target: [number, number, number];
-  eye: [number, number, number];
-}) {
-  const controls = useThree((s) => s.controls) as OrbitControlsImpl | null;
-  const goal = useMemo(() => new Vector3(...target), [target]);
-  const eyePos = useMemo(() => new Vector3(...eye), [eye]);
-  const pending = useRef<'init' | 'focus' | 'enter-sky' | 'leave-sky' | null>('init');
-  const saved = useRef<{ position: Vector3; target: Vector3 } | null>(null);
-  // The camera always starts in overview, so a link that opens in sky view still enters it.
-  const lastView = useRef<'overview' | 'sky'>('overview');
-
-  useEffect(() => {
-    // Until the first frame has placed the camera ('init'), only record the view.
-    const initializing = pending.current === 'init';
-    if (lastView.current !== view) {
-      lastView.current = view;
-      if (!initializing) pending.current = view === 'sky' ? 'enter-sky' : 'leave-sky';
-    } else if (view === 'overview' && !initializing) {
-      pending.current = 'focus';
-    }
-  }, [goal, view]);
-
-  useFrame(({ camera }, delta) => {
-    if (!controls || !pending.current) return;
-    const cam = camera as PerspectiveCamera;
-    if (pending.current === 'init') {
-      controls.target.copy(goal);
-      // Portrait screens see a narrow slice; step back so the three pyramids fit.
-      if (cam.aspect < 1) {
-        const back = cam.position
-          .clone()
-          .sub(controls.target)
-          .multiplyScalar(1 / cam.aspect - 1);
-        cam.position.add(back.multiplyScalar(1.1));
-      }
-      pending.current = lastView.current === 'sky' ? 'enter-sky' : 'focus';
-      return;
-    }
-    if (pending.current === 'enter-sky') {
-      saved.current = { position: cam.position.clone(), target: controls.target.clone() };
-      cam.position.copy(eyePos);
-      // Face the pyramids (north-west), tilted up 25°.
-      const look = new Vector3(-0.6, 0.47, -0.65).normalize();
-      controls.target.copy(eyePos).add(look);
-      cam.fov = SKY_FOV;
-      cam.updateProjectionMatrix();
-      controls.update();
-      pending.current = null;
-      return;
-    }
-    if (pending.current === 'leave-sky') {
-      if (saved.current) {
-        cam.position.copy(saved.current.position);
-        controls.target.copy(saved.current.target);
-      }
-      cam.fov = OVERVIEW_FOV;
-      cam.updateProjectionMatrix();
-      controls.update();
-      pending.current = 'focus';
-      return;
-    }
-    // Ease towards the focus target; the camera keeps its offset.
-    const step = goal
-      .clone()
-      .sub(controls.target)
-      .multiplyScalar(1 - Math.exp(-delta * 3));
-    controls.target.add(step);
-    cam.position.add(step);
-    controls.update();
-    if (goal.distanceTo(controls.target) < 0.5) pending.current = null;
-  });
-  return null;
-}
-
 export default function SceneCanvas(props: SceneCanvasProps) {
   const { layers } = props;
   return (
@@ -188,6 +124,14 @@ export default function SceneCanvas(props: SceneCanvasProps) {
       <Suspense fallback={null}>
         <Sky sky={props.sky} stars={props.stars}>
           {layers.skyDome ? <SkyGrid /> : null}
+          {layers.constellations && props.sky && props.stars && props.constellations ? (
+            <Constellations
+              sky={props.sky}
+              stars={props.stars}
+              figures={props.constellations}
+              visibility={Math.max(0.35, starVisibility(props.sky.sun.alt / DEG))}
+            />
+          ) : null}
         </Sky>
         <Lights sky={props.sky} />
         <Terrain terrain={props.terrain} heights={props.heights} />
@@ -197,20 +141,25 @@ export default function SceneCanvas(props: SceneCanvasProps) {
         ) : null}
         {layers.dimensions ? <Dimensions items={props.dimensions} /> : null}
       </Suspense>
+      {/* Overview only. Sky view walks with its own input (see CameraRig). */}
       <OrbitControls
         makeDefault
+        enabled={props.view === 'overview'}
         enableDamping
         dampingFactor={0.08}
-        enableZoom={!(props.view === 'sky')}
-        enablePan={!(props.view === 'sky')}
-        rotateSpeed={props.view === 'sky' ? -0.35 : 1}
-        minDistance={props.view === 'sky' ? 1 : 40}
-        maxDistance={props.view === 'sky' ? 1 : 6000}
-        minPolarAngle={props.view === 'sky' ? 2 * DEG : 0}
-        maxPolarAngle={props.view === 'sky' ? 178 * DEG : 88 * DEG}
+        minDistance={40}
+        maxDistance={6000}
+        maxPolarAngle={88 * DEG}
         zoomSpeed={0.8}
       />
-      <CameraRig view={props.view} target={props.focusTarget} eye={props.skyEye} />
+      <CameraRig
+        view={props.view}
+        target={props.focusTarget}
+        standpoint={props.standpoint}
+        world={props.walkWorld}
+        groundAt={props.groundAt}
+        onStandpoint={props.onStandpoint}
+      />
     </Canvas>
   );
 }

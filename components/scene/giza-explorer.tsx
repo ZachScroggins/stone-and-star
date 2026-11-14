@@ -3,18 +3,21 @@
 import dynamic from 'next/dynamic';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 
+import { ConstellationSetV1, ZODIAC_CONSTELLATIONS_URL } from '@/lib/astro/constellations';
 import type { Anchor, Measurement } from '@/lib/contracts/site';
-import { toLocal } from '@/lib/geo/local';
+import { fromLocal, toLocal } from '@/lib/geo/local';
 import { modelManifestUrl, ModelManifestV1 } from '@/lib/models/manifest';
 import { useSceneStore } from '@/lib/scene/store';
 import { decodeHeights, GIZA_TERRAIN_URL, heightAt, TerrainV1 } from '@/lib/scene/terrain';
 import { sceneFromSearchParams, sceneToSearchParams } from '@/lib/scene/url';
+import { sightTo, type WalkPose, type WalkWorld } from '@/lib/scene/walk';
 
 import { LayerBar } from './layer-bar';
 import type { AnchorMarker, DimensionSpec } from './overlays';
 import { SkyConsole } from './sky-console';
 import type { PlacedModel } from './structures';
 import { useSky } from './use-sky';
+import { WalkPad, type SightReadout } from './walk-pad';
 
 const SceneCanvas = dynamic(() => import('./scene-canvas'), { ssr: false });
 
@@ -69,6 +72,7 @@ export default function GizaExplorer(props: GizaExplorerProps) {
 
   const terrain = useJson(GIZA_TERRAIN_URL, (j) => TerrainV1.parse(j));
   const manifest = useJson(modelManifestUrl(props.siteSlug), (j) => ModelManifestV1.parse(j));
+  const zodiac = useJson(ZODIAC_CONSTELLATIONS_URL, (j) => ConstellationSetV1.parse(j));
   const heights = useMemo(
     () => (terrain.data ? decodeHeights(terrain.data) : null),
     [terrain.data]
@@ -145,15 +149,64 @@ export default function GizaExplorer(props: GizaExplorerProps) {
     return p ? [p[0], p[1] + 40, p[2]] : [-250, 40, 350];
   }, [state.focus, placed]);
 
-  // Sky view stands 450 m south-east of the Great Pyramid, looking back across the
-  // plateau, so the pyramids sit on the horizon under the sky.
-  const skyEye = useMemo<[number, number, number]>(() => {
+  // Sky view starts 450 m south-east of the Great Pyramid, looking back across the
+  // plateau (north-west, 25° up), so the pyramids sit on the horizon under the sky.
+  const defaultStandpoint = useMemo<WalkPose>(() => {
     const gp = placed?.anchors.get('great-pyramid-center');
-    if (!placed || !heights || !gp) return [0, 2, 0];
-    const x = gp[0] + 320;
-    const z = gp[2] + 320;
-    return [x, heightAt(placed.terrain, heights, x, z) + 1.7, z];
-  }, [placed, heights]);
+    if (!gp) return { x: 0, z: 0, heading: 315 * DEG, pitch: 25 * DEG };
+    return { x: gp[0] + 320, z: gp[2] + 320, heading: 315 * DEG, pitch: 25 * DEG };
+  }, [placed]);
+
+  const standpoint = useMemo<WalkPose>(() => {
+    const s = state.standpoint;
+    if (!s || !placed) return defaultStandpoint;
+    const p = toLocal(placed.terrain.origin, s.lat, s.lon);
+    return { x: p.x, z: p.z, heading: s.heading * DEG, pitch: s.pitch * DEG };
+  }, [state.standpoint, placed, defaultStandpoint]);
+
+  const onStandpoint = useCallback(
+    (pose: WalkPose) => {
+      if (!placed) return;
+      const { lat, lon } = fromLocal(placed.terrain.origin, pose.x, pose.z);
+      dispatch({
+        type: 'setStandpoint',
+        standpoint: { lat, lon, heading: pose.heading / DEG, pitch: pose.pitch / DEG },
+      });
+    },
+    [placed, dispatch]
+  );
+
+  // Pyramids are solid, and the viewer stays on the terrain tile.
+  const walkWorld = useMemo<WalkWorld>(
+    () => ({
+      footprints: models.map((m) => ({
+        x: m.position[0],
+        z: m.position[2],
+        halfSide: Number(m.model.params.baseSide) / 2,
+      })),
+      halfExtent: placed ? ((placed.terrain.size - 1) * placed.terrain.spacingM) / 2 - 60 : 1000,
+    }),
+    [models, placed]
+  );
+
+  const groundAt = useCallback(
+    (x: number, z: number) => (placed && heights ? heightAt(placed.terrain, heights, x, z) : 0),
+    [placed, heights]
+  );
+
+  // Where the Great Pyramid's apex stands from the viewer, for lining it up with the sky.
+  const sight = useMemo<SightReadout | null>(() => {
+    const gp = models.find((m) => m.model.structureSlug === 'great-pyramid');
+    if (!gp) return null;
+    const top = Number(gp.model.params.topHeight ?? gp.model.params.height);
+    const eye: [number, number, number] = [
+      standpoint.x,
+      groundAt(standpoint.x, standpoint.z) + 1.7,
+      standpoint.z,
+    ];
+    const apex: [number, number, number] = [gp.position[0], gp.position[1] + top, gp.position[2]];
+    return { name: 'Great Pyramid', ...sightTo(eye, apex) };
+  }, [models, standpoint, groundAt]);
 
   const onFocus = useCallback(
     (slug: string) => {
@@ -177,10 +230,14 @@ export default function GizaExplorer(props: GizaExplorerProps) {
           dimensions={dimensions}
           sky={sky.result}
           stars={sky.attributes}
+          constellations={zodiac.data}
           layers={state.layers}
           focusTarget={focusTarget}
           view={state.view}
-          skyEye={skyEye}
+          standpoint={standpoint}
+          walkWorld={walkWorld}
+          groundAt={groundAt}
+          onStandpoint={onStandpoint}
           focus={state.focus}
           highlights={state.highlights}
           onFocus={onFocus}
@@ -200,6 +257,15 @@ export default function GizaExplorer(props: GizaExplorerProps) {
           onView={(view) => dispatch({ type: 'setView', view })}
         />
       </div>
+
+      {state.view === 'sky' && placed ? (
+        <WalkPad
+          sight={sight}
+          moved={state.standpoint !== null}
+          onReset={() => dispatch({ type: 'setStandpoint', standpoint: null })}
+          className="absolute top-36 right-3 z-10 sm:top-auto sm:right-4 sm:bottom-4"
+        />
+      ) : null}
 
       <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 p-3 sm:bottom-4 sm:left-4 sm:p-0">
         <SkyConsole

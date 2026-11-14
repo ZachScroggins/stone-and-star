@@ -32,30 +32,30 @@ Node 22 or later (`engines` in `package.json`; the Claude Code provider needs it
 
 ## Where things live
 
-| Path                                     | What                                                                                                                  |
-| ---------------------------------------- | --------------------------------------------------------------------------------------------------------------------- |
-| `lib/vocab.ts`                           | Closed value sets (reception, basis, conditions, model roles, ...)                                                    |
-| `lib/contracts/`                         | Hand-written Zod data contracts (`site.ts`: sites, structures, measurements)                                          |
-| `lib/scene/actions.ts`                   | `SceneAction` union and versioned URL scene state                                                                     |
-| `lib/scene/`                             | Scene reducer (`state.ts`), zustand store, URL sync (`url.ts`), terrain format                                        |
-| `lib/astro/`                             | Sky pipeline: ERFA port (long-term precession), time, coordinates, refraction, Sun and Moon, seasons, the star worker |
-| `lib/astro/__fixtures__/stellarium.json` | Reference positions recorded from Stellarium (do not edit by hand)                                                    |
-| `lib/geo/local.ts`                       | Latitude/longitude to scene metres (+x east, +y up, −z north)                                                         |
-| `lib/models/`                            | Procedural model generators (`pyramid.ts`) and the model manifest contract                                            |
-| `components/scene/`                      | The 3D explorer: canvas, sky, terrain, structures, overlays, console, layer bar                                       |
-| `scripts/`                               | Data builds: `fetch-data.sh`, `build-stars.ts`, `build-terrain.ts`, `generate-models.ts`, `stellarium-reference.ts`   |
-| `public/data/`, `public/models/`         | Built outputs (star catalog, terrain, glTF models, manifest); committed                                               |
-| `lib/data/`                              | `SiteData` interface, `getSiteData()` (server-only), mock data in `mock/`                                             |
-| `lib/ai/models.ts`                       | `getModel(role)`, pinned model IDs, provider options                                                                  |
-| `lib/ai/claude-local.ts`                 | The dev-only Claude Code provider and its lockdown                                                                    |
-| `lib/ai/prompts.ts`                      | Guide system prompt                                                                                                   |
-| `lib/years.ts`                           | `fromBce()`, `fromCe()`, `formatYear()`                                                                               |
-| `app/api/chat/route.ts`                  | Chat endpoint; requires a signed-in user                                                                              |
-| `lib/auth/`                              | Neon Auth server (`auth`, `getCurrentUser`), browser client, `safeNextPath`                                           |
-| `app/api/auth/[...path]`                 | Same-origin proxy to Neon Auth                                                                                        |
-| `app/sign-in/`                           | Google and GitHub sign-in page (`?next=` return path)                                                                 |
-| `app/giza/`                              | Giza route; its layout sets `data-theme="egypt"`                                                                      |
-| `components/brand/`                      | Logo mark, wordmark, hero scene                                                                                       |
+| Path                                     | What                                                                                                                                           |
+| ---------------------------------------- | ---------------------------------------------------------------------------------------------------------------------------------------------- |
+| `lib/vocab.ts`                           | Closed value sets (reception, basis, conditions, model roles, ...)                                                                             |
+| `lib/contracts/`                         | Hand-written Zod data contracts (`site.ts`: sites, structures, measurements)                                                                   |
+| `lib/scene/actions.ts`                   | `SceneAction` union and versioned URL scene state                                                                                              |
+| `lib/scene/`                             | Scene reducer (`state.ts`), zustand store, URL sync (`url.ts`), terrain format, sky-view walking (`walk.ts`)                                   |
+| `lib/astro/`                             | Sky pipeline: ERFA port (long-term precession), time, coordinates, refraction, Sun and Moon, seasons, the star worker                          |
+| `lib/astro/__fixtures__/stellarium.json` | Reference positions recorded from Stellarium (do not edit by hand)                                                                             |
+| `lib/geo/local.ts`                       | Latitude/longitude to scene metres (+x east, +y up, −z north)                                                                                  |
+| `lib/models/`                            | Procedural model generators (`pyramid.ts`) and the model manifest contract                                                                     |
+| `components/scene/`                      | The 3D explorer: canvas, sky, terrain, structures, overlays, console, layer bar                                                                |
+| `scripts/`                               | Data builds: `fetch-data.sh`, `build-stars.ts`, `build-terrain.ts`, `build-constellations.ts`, `generate-models.ts`, `stellarium-reference.ts` |
+| `public/data/`, `public/models/`         | Built outputs (star catalog, terrain, glTF models, manifest); committed                                                                        |
+| `lib/data/`                              | `SiteData` interface, `getSiteData()` (server-only), mock data in `mock/`                                                                      |
+| `lib/ai/models.ts`                       | `getModel(role)`, pinned model IDs, provider options                                                                                           |
+| `lib/ai/claude-local.ts`                 | The dev-only Claude Code provider and its lockdown                                                                                             |
+| `lib/ai/prompts.ts`                      | Guide system prompt                                                                                                                            |
+| `lib/years.ts`                           | `fromBce()`, `fromCe()`, `formatYear()`                                                                                                        |
+| `app/api/chat/route.ts`                  | Chat endpoint; requires a signed-in user                                                                                                       |
+| `lib/auth/`                              | Neon Auth server (`auth`, `getCurrentUser`), browser client, `safeNextPath`                                                                    |
+| `app/api/auth/[...path]`                 | Same-origin proxy to Neon Auth                                                                                                                 |
+| `app/sign-in/`                           | Google and GitHub sign-in page (`?next=` return path)                                                                                          |
+| `app/giza/`                              | Giza route; its layout sets `data-theme="egypt"`                                                                                               |
+| `components/brand/`                      | Logo mark, wordmark, hero scene                                                                                                                |
 
 Tests sit next to the code as `*.test.ts`.
 
@@ -95,8 +95,8 @@ Tests sit next to the code as `*.test.ts`.
 
 Raw downloads live in `data/raw/` (gitignored); built outputs are committed. To rebuild:
 
-1. `scripts/fetch-data.sh` downloads and checksums the Hipparcos subset and the Copernicus tile.
-2. `npx tsx scripts/build-stars.ts` and `npx tsx scripts/build-terrain.ts` write `public/data/`.
+1. `scripts/fetch-data.sh` downloads and checksums the Hipparcos subset, the Copernicus tile and Stellarium's modern sky culture.
+2. `npx tsx scripts/build-stars.ts` and `npx tsx scripts/build-terrain.ts` write `public/data/`; then `npx tsx scripts/build-constellations.ts` (zodiac figures from Stellarium's sky culture, checked against the star catalog).
 3. `npx tsx scripts/generate-models.ts` writes the glTF models and manifest from the mock measurements and anchors.
 4. `npx tsx scripts/stellarium-reference.ts` re-records the Stellarium fixture (needs Stellarium and the config described in the script). Run it only when the test cases change.
 

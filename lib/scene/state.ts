@@ -8,6 +8,7 @@ export const DEFAULT_LAYERS: SceneState['layers'] = {
   alignment: false,
   skyDome: false,
   labels: true,
+  constellations: true,
 };
 
 /** Initial state. Callers pass the current date so the default sky is tonight's. */
@@ -23,6 +24,7 @@ export function initialSceneState(now: { year: number; dayOfYear: number }): Sce
     sky: { dayOfYear: now.dayOfYear, solarHour: 21 },
     condition: 'surviving',
     view: 'overview',
+    standpoint: null,
   };
 }
 
@@ -53,6 +55,8 @@ export function reduceScene(state: SceneState, action: SceneAction): SceneState 
       return { ...state, condition: action.condition };
     case 'setView':
       return { ...state, view: action.view };
+    case 'setStandpoint':
+      return { ...state, standpoint: action.standpoint && { ...action.standpoint } };
   }
 }
 

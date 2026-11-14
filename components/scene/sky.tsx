@@ -29,6 +29,11 @@ export function horizonColor(sunAltDeg: number) {
   return c.lerp(day, smooth(-2, 12, sunAltDeg));
 }
 
+/** Star brightness factor for a solar altitude (degrees): 1 at night, 0 in daylight. */
+export function starVisibility(sunAltDeg: number) {
+  return 1 - smooth(-14, -3, sunAltDeg);
+}
+
 /** How much daylight there is, 0 (astronomical night) to 1 (full day). */
 export function daylight(sunAltDeg: number) {
   return smooth(-8, 10, sunAltDeg);
@@ -138,7 +143,7 @@ export function Sky({
   );
   const starUniforms = useMemo(
     () => ({
-      uVisibility: { value: 1 - smooth(-14, -3, sunAltDeg) },
+      uVisibility: { value: starVisibility(sunAltDeg) },
       uPixelRatio: { value: pixelRatio },
     }),
     [sunAltDeg, pixelRatio]

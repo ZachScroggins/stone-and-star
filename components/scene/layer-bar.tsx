@@ -6,6 +6,7 @@ import { cn } from '@/lib/utils';
 const LAYERS = [
   { key: 'labels', label: 'Names' },
   { key: 'dimensions', label: 'Dimensions' },
+  { key: 'constellations', label: 'Zodiac' },
   { key: 'skyDome', label: 'Sky grid' },
 ] as const;
 

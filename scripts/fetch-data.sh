@@ -26,3 +26,8 @@ fetch 'https://vizier.cfa.harvard.edu/viz-bin/asu-tsv?-source=I/239/hip_main&-ou
 # Copernicus GLO-30 DEM tile N29 E031 (AWS Open Data).
 fetch 'https://copernicus-dem-30m.s3.amazonaws.com/Copernicus_DSM_COG_10_N29_00_E031_00_DEM/Copernicus_DSM_COG_10_N29_00_E031_00_DEM.tif' \
   cop_N29_E031.tif 88daaeb7722323e58aa9386fcd520fe6c46fcd6aacfffdb4025ab98bd0a77bc5
+
+# Stellarium 26.3 "modern" sky culture (constellation stick figures by HIP number).
+# Text and data CC BY-SA 4.0, Stellarium's team.
+fetch 'https://raw.githubusercontent.com/Stellarium/stellarium/v26.3/skycultures/modern/index.json' \
+  stellarium-modern-v26.3.json 1f2f5ffd6c9e25a7d0dcfdbf1f756e2db03dd3b8ed4ec016a2839b09f6b0fe1e
