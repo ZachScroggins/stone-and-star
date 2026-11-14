@@ -1,0 +1,107 @@
+{
+  "v": 1,
+  "siteSlug": "giza",
+  "models": [
+    {
+      "structureSlug": "great-pyramid",
+      "anchorSlug": "great-pyramid-center",
+      "condition": "as_built",
+      "file": "/models/giza/great-pyramid-as-built-v1.glb",
+      "generator": "pyramid v1",
+      "params": {
+        "baseSide": 230.3,
+        "height": 146.6,
+        "casing": true,
+        "seed": 1244781929
+      },
+      "measurementSlugs": [
+        "great-pyramid-base-side-length-as-built",
+        "great-pyramid-height-as-built"
+      ],
+      "unverified": true,
+      "triangles": 4
+    },
+    {
+      "structureSlug": "great-pyramid",
+      "anchorSlug": "great-pyramid-center",
+      "condition": "surviving",
+      "file": "/models/giza/great-pyramid-surviving-v1.glb",
+      "generator": "pyramid v1",
+      "params": {
+        "baseSide": 230.3,
+        "height": 146.6,
+        "topHeight": 138.5,
+        "casing": false,
+        "stepHeight": 1.5,
+        "seed": 1244781929
+      },
+      "measurementSlugs": [
+        "great-pyramid-base-side-length-as-built",
+        "great-pyramid-height-as-built",
+        "great-pyramid-height-surviving"
+      ],
+      "unverified": true,
+      "triangles": 1466
+    },
+    {
+      "structureSlug": "khafre-pyramid",
+      "anchorSlug": "khafre-pyramid-center",
+      "condition": "as_built",
+      "file": "/models/giza/khafre-pyramid-as-built-v1.glb",
+      "generator": "pyramid v1",
+      "params": {
+        "baseSide": 215.3,
+        "height": 143.5,
+        "casing": true,
+        "seed": 2202945343
+      },
+      "measurementSlugs": [
+        "khafre-pyramid-base-side-length-as-built",
+        "khafre-pyramid-height-as-built"
+      ],
+      "unverified": true,
+      "triangles": 4
+    },
+    {
+      "structureSlug": "khafre-pyramid",
+      "anchorSlug": "khafre-pyramid-center",
+      "condition": "surviving",
+      "file": "/models/giza/khafre-pyramid-surviving-v1.glb",
+      "generator": "pyramid v1",
+      "params": {
+        "baseSide": 215.3,
+        "height": 143.5,
+        "topHeight": 136.4,
+        "casing": false,
+        "stepHeight": 1.5,
+        "seed": 2202945343
+      },
+      "measurementSlugs": [
+        "khafre-pyramid-base-side-length-as-built",
+        "khafre-pyramid-height-as-built",
+        "khafre-pyramid-height-surviving"
+      ],
+      "unverified": true,
+      "triangles": 1450
+    },
+    {
+      "structureSlug": "menkaure-pyramid",
+      "anchorSlug": "menkaure-pyramid-center",
+      "condition": "as_built",
+      "file": "/models/giza/menkaure-pyramid-as-built-v1.glb",
+      "generator": "pyramid v1",
+      "params": {
+        "baseSide": 103.4,
+        "height": 65,
+        "casing": true,
+        "seed": 3962093254
+      },
+      "measurementSlugs": [
+        "menkaure-pyramid-base-side-length-as-built",
+        "menkaure-pyramid-height-as-built"
+      ],
+      "unverified": true,
+      "triangles": 4
+    }
+  ]
+}

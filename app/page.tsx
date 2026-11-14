@@ -41,7 +41,7 @@ export default function HomePage() {
               <span className="block">Read the sky.</span>
               <span className="block">Weigh the evidence.</span>
             </h1>
-            <p className="mt-6 max-w-prose text-lg leading-relaxed text-muted-foreground">
+            <p className="mt-6 max-w-prose text-lg/relaxed text-muted-foreground">
               Explore ancient sites in 3D: their measurements, their possible alignments with the
               stars, and the competing explanations for how old they are and how they were built.
               Mainstream and alternative views sit side by side, and every claim shows its sources.
@@ -65,7 +65,7 @@ export default function HomePage() {
           <div className="mx-auto w-full max-w-6xl px-5 py-16 sm:px-8 md:py-20">
             <div className="max-w-2xl">
               <h2 className="font-heading text-4xl font-semibold">Two labels on every claim</h2>
-              <p className="mt-4 text-lg leading-relaxed text-muted-foreground">
+              <p className="mt-4 text-lg/relaxed text-muted-foreground">
                 One word can’t say both how specialists regard a claim and what it rests on. So each
                 claim carries two labels, each citing its basis. Neither label means right or wrong,
                 and the site never picks a winner on a contested question.

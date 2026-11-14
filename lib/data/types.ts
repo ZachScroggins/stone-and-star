@@ -1,4 +1,4 @@
-import type { Measurement, Site, Structure } from '@/lib/contracts/site';
+import type { Anchor, Measurement, Site, Structure } from '@/lib/contracts/site';
 
 /**
  * Data-access interface. The mock implementation reads typed, Zod-validated files;
@@ -10,4 +10,5 @@ export interface SiteData {
   getSite(slug: string): Promise<Site | null>;
   listStructures(siteSlug: string): Promise<Structure[]>;
   getMeasurements(structureSlug: string): Promise<Measurement[]>;
+  listAnchors(siteSlug: string): Promise<Anchor[]>;
 }
