@@ -1,7 +1,7 @@
 'use client';
 
 import { ChevronDown, Minus, Plus } from 'lucide-react';
-import { useMemo, useState } from 'react';
+import { useId, useMemo, useState } from 'react';
 
 import { Slider } from '@/components/ui/slider';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
@@ -30,6 +30,9 @@ interface Props {
   sunAltDeg: number | null;
   onEpoch: (year: number) => void;
   onSkyTime: (t: { dayOfYear?: number; solarHour?: number }) => void;
+  /** Fold the year slider, day and seasons behind a toggle (the narrow panel's footer). */
+  fold?: boolean;
+  className?: string;
 }
 
 function formatHour(h: number) {
@@ -78,7 +81,7 @@ function YearInput({ epoch, onEpoch }: { epoch: number; onEpoch: (y: number) => 
         onKeyDown={(e) => {
           if (e.key === 'Enter') e.currentTarget.blur();
         }}
-        className="w-[4.6ch] min-w-0 bg-transparent tracking-normal sm:w-[4.8ch] font-display text-[2rem] leading-none sm:text-5xl font-semibold sm:tracking-wide text-[oklch(0.95_0.03_85)] tabular-nums outline-none focus-visible:underline focus-visible:decoration-[oklch(0.8_0.12_85)] focus-visible:underline-offset-8"
+        className="w-[4.6ch] min-w-0 bg-transparent font-display text-[2rem] leading-none font-semibold text-[oklch(0.95_0.03_85)] tabular-nums outline-none focus-visible:underline focus-visible:decoration-[oklch(0.8_0.12_85)] focus-visible:underline-offset-8"
       />
       <ToggleGroup
         value={[era]}
@@ -104,8 +107,12 @@ function YearInput({ epoch, onEpoch }: { epoch: number; onEpoch: (y: number) => 
   );
 }
 
+/**
+ * Year, date and solar time for the sky. It lives in the info panel: folded in the
+ * narrow panel's footer, open in the expanded panel's side column.
+ */
 export function SkyConsole(props: Props) {
-  const { epoch, dayOfYear, solarHour, latDeg, lonDeg, sunAltDeg } = props;
+  const { epoch, dayOfYear, solarHour, latDeg, lonDeg, sunAltDeg, fold = false } = props;
 
   // Paint the time track with this date's sky: one sample per half hour.
   const gradient = useMemo(() => {
@@ -133,8 +140,10 @@ export function SkyConsole(props: Props) {
   );
   const maxDay = daysInYear(epoch);
 
-  // On phones the year slider, day and seasons fold away so the scene stays visible.
+  // Folded, the year slider, day and seasons hide so the panel keeps room to read.
   const [expanded, setExpanded] = useState(false);
+  const open = !fold || expanded;
+  const moreId = useId();
 
   const nudge = (delta: number) =>
     props.onEpoch(Math.min(EPOCH_MAX, Math.max(EPOCH_MIN, epoch + delta)));
@@ -142,8 +151,7 @@ export function SkyConsole(props: Props) {
   return (
     <section
       aria-label="Sky date and time"
-      data-theme="egypt"
-      className="dark pointer-events-auto w-full rounded-2xl border border-white/10 bg-[oklch(0.16_0.012_60/0.78)] p-4 text-[oklch(0.9_0.02_85)] shadow-[0_20px_60px_-20px_rgb(0_0_0/0.7)] backdrop-blur-md sm:w-104 sm:p-5"
+      className={cn('text-[oklch(0.9_0.02_85)]', props.className)}
     >
       {/* Below about 340 px the nudge buttons wrap under the year instead of overflowing. */}
       <div className="flex flex-wrap items-end justify-between gap-2">
@@ -174,24 +182,26 @@ export function SkyConsole(props: Props) {
         </div>
       </div>
 
-      <button
-        type="button"
-        aria-expanded={expanded}
-        aria-controls="sky-console-more"
-        onClick={() => setExpanded((v) => !v)}
-        className="mt-2 flex min-h-11 w-full items-center justify-between rounded-lg px-1 text-sm text-[oklch(0.82_0.03_85)] focus-visible:ring-2 focus-visible:ring-[oklch(0.8_0.12_85)] focus-visible:outline-none sm:hidden"
-      >
-        <span>
-          <span className="font-heading text-lg">{formatDayOfYear(epoch, dayOfYear)}</span>
-          <span className="text-[oklch(0.68_0.03_80)]"> {expanded ? 'Hide' : 'Change'} date</span>
-        </span>
-        <ChevronDown
-          className={cn('size-4 transition-transform', expanded && 'rotate-180')}
-          aria-hidden
-        />
-      </button>
+      {fold ? (
+        <button
+          type="button"
+          aria-expanded={expanded}
+          aria-controls={moreId}
+          onClick={() => setExpanded((v) => !v)}
+          className="mt-1 flex min-h-11 w-full items-center justify-between rounded-lg px-1 text-sm text-[oklch(0.82_0.03_85)] hover:bg-white/5 focus-visible:ring-2 focus-visible:ring-[oklch(0.8_0.12_85)] focus-visible:outline-none"
+        >
+          <span>
+            <span className="font-heading text-lg">{formatDayOfYear(epoch, dayOfYear)}</span>
+            <span className="text-[oklch(0.68_0.03_80)]"> {expanded ? 'Hide' : 'Change'} date</span>
+          </span>
+          <ChevronDown
+            className={cn('size-4 transition-transform', expanded && 'rotate-180')}
+            aria-hidden
+          />
+        </button>
+      ) : null}
 
-      <div id="sky-console-more" className={cn(!expanded && 'hidden', 'sm:block')}>
+      <div id={moreId} className={cn(!open && 'hidden')}>
         <Slider
           className="mt-4"
           aria-label="Year"
@@ -207,9 +217,9 @@ export function SkyConsole(props: Props) {
         </div>
 
         <div className="mt-5 flex items-baseline justify-between gap-3">
-          <p className="hidden font-heading text-xl sm:block">
-            {formatDayOfYear(epoch, dayOfYear)}
-          </p>
+          {fold ? null : (
+            <p className="font-heading text-xl">{formatDayOfYear(epoch, dayOfYear)}</p>
+          )}
           <label className="flex items-center gap-2 text-xs text-[oklch(0.68_0.03_80)]">
             Day
             <input
@@ -225,7 +235,7 @@ export function SkyConsole(props: Props) {
             />
           </label>
         </div>
-        <div className="mt-2 grid grid-cols-2 gap-1.5 sm:grid-cols-4">
+        <div className="mt-2 grid grid-cols-2 gap-1.5">
           {(Object.keys(SEASON_EVENTS) as SeasonEvent[]).map((e) => (
             <button
               key={e}
@@ -243,7 +253,7 @@ export function SkyConsole(props: Props) {
         </div>
       </div>
 
-      <div className="mt-3 flex items-baseline justify-between sm:mt-5">
+      <div className={cn('flex items-baseline justify-between', open ? 'mt-5' : 'mt-2')}>
         <p className="text-sm">
           <span className="font-heading text-xl tabular-nums">{formatHour(solarHour)}</span>{' '}
           <span className="text-[oklch(0.68_0.03_80)]">solar time</span>

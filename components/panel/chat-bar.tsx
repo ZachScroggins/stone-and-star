@@ -1,9 +1,47 @@
 'use client';
 
 import { ArrowUp, X } from 'lucide-react';
-import { useId, useRef, useState, type FormEvent } from 'react';
+import { useEffect, useId, useRef, useState, type FormEvent, type RefObject } from 'react';
 
 import { cn } from '@/lib/utils';
+
+const FADE = '2.5rem';
+
+/**
+ * Fades a horizontal scroller's edges where more content hides past them, as a CSS
+ * mask: the right edge while it overflows, the left once it is scrolled.
+ */
+function useEdgeFade(ref: RefObject<HTMLElement | null>) {
+  const [edges, setEdges] = useState({ start: false, end: false });
+
+  useEffect(() => {
+    const el = ref.current;
+    if (!el) return;
+    const update = () => {
+      const max = el.scrollWidth - el.clientWidth;
+      const start = el.scrollLeft > 1;
+      const end = max - el.scrollLeft > 1;
+      setEdges((e) => (e.start === start && e.end === end ? e : { start, end }));
+    };
+    update();
+    el.addEventListener('scroll', update, { passive: true });
+    const observer = new ResizeObserver(update);
+    observer.observe(el);
+    for (const child of el.children) observer.observe(child);
+    return () => {
+      el.removeEventListener('scroll', update);
+      observer.disconnect();
+    };
+  }, [ref]);
+
+  const mask =
+    edges.start || edges.end
+      ? `linear-gradient(to right, ${edges.start ? `transparent, black ${FADE}` : 'black'}, ${
+          edges.end ? `black calc(100% - ${FADE}), transparent` : 'black'
+        })`
+      : undefined;
+  return mask ? { maskImage: mask, WebkitMaskImage: mask } : undefined;
+}
 
 /**
  * The floating chat bar, as a shell: suggestions and an input, no AI yet. Asking
@@ -28,6 +66,8 @@ export function ChatBar({
   const [focused, setFocused] = useState(false);
   const input = useRef<HTMLInputElement>(null);
   const answerId = useId();
+  const suggestionList = useRef<HTMLUListElement>(null);
+  const fade = useEdgeFade(suggestionList);
 
   const submit = (e: FormEvent) => {
     e.preventDefault();
@@ -69,6 +109,8 @@ export function ChatBar({
       ) : null}
 
       <ul
+        ref={suggestionList}
+        style={fade}
         aria-label="Suggested questions"
         className={cn(
           'pointer-events-auto flex gap-2 overflow-x-auto scrollbar-none',

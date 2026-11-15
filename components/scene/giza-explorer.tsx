@@ -338,7 +338,9 @@ export default function GizaExplorer(props: GizaExplorerProps) {
             panel.size === 'icon' && 'top-34 right-3 sm:top-32 sm:right-4',
             panel.size === 'phone' &&
               'inset-x-0 top-34 bottom-0 sm:inset-x-auto sm:top-32 sm:right-4 sm:bottom-4 sm:w-[24rem]',
-            panel.size === 'full' && 'inset-x-0 top-34 bottom-0 sm:inset-x-4 sm:top-32 sm:bottom-4'
+            // Expanded, it covers the control row too: same top as that row, same
+            // bottom as the chat bar.
+            panel.size === 'full' && 'inset-x-0 top-34 bottom-0 sm:inset-x-4 sm:top-18 sm:bottom-4'
           )}
         >
           <InfoPanel
@@ -346,6 +348,19 @@ export default function GizaExplorer(props: GizaExplorerProps) {
             tab={panel.tab}
             size={panel.size}
             onPanel={(tab, size) => dispatch({ type: 'openPanel', tab, size })}
+            renderTime={(wide) => (
+              <SkyConsole
+                epoch={state.epoch}
+                dayOfYear={state.sky.dayOfYear}
+                solarHour={state.sky.solarHour}
+                latDeg={props.lat}
+                lonDeg={props.lon}
+                sunAltDeg={sky.result ? sky.result.sun.alt / DEG : null}
+                onEpoch={(year) => dispatch({ type: 'setEpoch', year })}
+                onSkyTime={(t) => dispatch({ type: 'setSkyTime', ...t })}
+                fold={!wide}
+              />
+            )}
             renderTab={(tab, wide) => {
               switch (tab) {
                 case 'facts':
@@ -401,17 +416,18 @@ export default function GizaExplorer(props: GizaExplorerProps) {
           />
         ) : null}
 
-        {/* Bottom controls. Phones: walk pad, sky console, chat bar, stacked. Wider
-            screens: console, chat bar and walk pad in one row when there is room
-            (the chat bar moves above them when there isn't). An open panel takes the
-            right side; expanded, it covers the controls and only the chat bar stays. */}
+        {/* Bottom controls: the walk pad and the chat bar (the sky's date and time
+            live in the info panel). Phones stack them; wider screens put them in one
+            row. An open panel takes the right side; expanded, it covers the walk pad
+            and the chat bar moves over its reading column. */}
         <div
           className={cn(
-            'pointer-events-none absolute inset-x-0 bottom-0 z-30 p-3 @container sm:inset-x-4 sm:bottom-4 sm:p-0',
-            panel.size === 'phone' && 'sm:right-104'
+            'pointer-events-none absolute inset-x-0 bottom-0 z-30 p-3 sm:inset-x-4 sm:bottom-4 sm:p-0',
+            panel.size === 'phone' && 'sm:right-104',
+            panel.size === 'full' && 'sm:left-104'
           )}
         >
-          <div className="grid gap-2 [grid-template-areas:'pad'_'console'_'chat'] sm:grid-cols-[auto_minmax(0,1fr)] sm:items-end sm:gap-3 sm:[grid-template-areas:'chat_chat'_'console_pad'] @min-[60rem]:grid-cols-[auto_minmax(0,1fr)_auto] @min-[60rem]:[grid-template-areas:'console_chat_pad']">
+          <div className="grid gap-2 [grid-template-areas:'pad'_'chat'] sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end sm:gap-3 sm:[grid-template-areas:'chat_pad']">
             {state.view === 'sky' && placed ? (
               <WalkPad
                 sight={sight}
@@ -425,24 +441,6 @@ export default function GizaExplorer(props: GizaExplorerProps) {
                 )}
               />
             ) : null}
-            <div
-              className={cn(
-                'pointer-events-none [grid-area:console]',
-                panelOpen && 'max-sm:hidden',
-                panel.size === 'full' && 'hidden'
-              )}
-            >
-              <SkyConsole
-                epoch={state.epoch}
-                dayOfYear={state.sky.dayOfYear}
-                solarHour={state.sky.solarHour}
-                latDeg={props.lat}
-                lonDeg={props.lon}
-                sunAltDeg={sky.result ? sky.result.sun.alt / DEG : null}
-                onEpoch={(year) => dispatch({ type: 'setEpoch', year })}
-                onSkyTime={(t) => dispatch({ type: 'setSkyTime', ...t })}
-              />
-            </div>
             <ChatBar
               suggestions={suggestions}
               draft={chatDraft}

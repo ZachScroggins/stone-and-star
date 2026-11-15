@@ -26,6 +26,8 @@ const iconButton =
  * The info panel floats over the scene in three states: an icon (full immersion),
  * phone width (read while you move the model) or expanded (focused reading). On
  * phones, open means a sheet over the lower scene. Tabs appear only with data.
+ * The sky's date and time sit beside the tabs: a footer in the narrow panel, a
+ * side column in the expanded one.
  */
 export function InfoPanel({
   data,
@@ -33,12 +35,14 @@ export function InfoPanel({
   size,
   onPanel,
   renderTab,
+  renderTime,
 }: {
   data: PanelData;
   tab: Tab;
   size: Size;
   onPanel: (tab: Tab, size: Size) => void;
   renderTab: (tab: Tab, wide: boolean) => ReactNode;
+  renderTime?: (wide: boolean) => ReactNode;
 }) {
   const available = availableTabs(data);
   const tabs = (Object.keys(TAB_LABELS) as Tab[]).filter((t) => available[t]);
@@ -65,7 +69,8 @@ export function InfoPanel({
       aria-label="Info panel"
       className={cn(
         'pointer-events-auto flex h-full flex-col overflow-hidden rounded-2xl border border-white/10 bg-background/88 text-foreground shadow-[0_20px_60px_-20px_rgb(0_0_0/0.7)] backdrop-blur-md',
-        'max-sm:rounded-b-none'
+        // Phones: the sheet runs under the chat bar, so its footer stops above it.
+        'max-sm:rounded-b-none max-sm:pb-19'
       )}
     >
       <Tabs
@@ -107,18 +112,31 @@ export function InfoPanel({
             <X aria-hidden className="size-5" />
           </button>
         </div>
-        {tabs.map((t) => (
-          <TabsContent
-            key={t}
-            value={t}
-            className={cn(
-              'min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 pt-5 pb-28',
-              wide && 'sm:px-8'
-            )}
-          >
-            <div className={cn(wide && 'mx-auto max-w-5xl')}>{renderTab(t, wide)}</div>
-          </TabsContent>
-        ))}
+        <div className={cn('flex min-h-0 flex-1', wide ? 'flex-row' : 'flex-col')}>
+          {wide && renderTime ? (
+            <div className="w-96 shrink-0 overflow-y-auto overscroll-contain border-r border-border p-5">
+              {renderTime(true)}
+            </div>
+          ) : null}
+          {tabs.map((t) => (
+            <TabsContent
+              key={t}
+              value={t}
+              className={cn(
+                'min-h-0 flex-1 overflow-y-auto overscroll-contain px-5 pt-5',
+                // Expanded, the chat bar floats over the bottom of the reading column.
+                wide ? 'pb-28 sm:px-8' : 'pb-8'
+              )}
+            >
+              <div className={cn(wide && 'mx-auto max-w-5xl')}>{renderTab(t, wide)}</div>
+            </TabsContent>
+          ))}
+          {!wide && renderTime ? (
+            <div className="shrink-0 border-t border-border px-4 pt-2 pb-4">
+              {renderTime(false)}
+            </div>
+          ) : null}
+        </div>
       </Tabs>
     </aside>
   );
