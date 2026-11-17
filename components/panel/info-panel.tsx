@@ -22,10 +22,47 @@ const TAB_LABELS: Record<Tab, string> = {
 const iconButton =
   'flex size-11 shrink-0 items-center justify-center rounded-full text-muted-foreground transition-colors hover:bg-foreground/10 hover:text-foreground focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none';
 
+function shownTabs(data: PanelData) {
+  const available = availableTabs(data);
+  return (Object.keys(TAB_LABELS) as Tab[]).filter((t) => available[t]);
+}
+
+/** Opens the info panel from its closed (icon) state. Sits at the end of the top row. */
+export function InfoPanelButton({
+  data,
+  tab,
+  onPanel,
+  className,
+}: {
+  data: PanelData;
+  tab: Tab;
+  onPanel: (tab: Tab, size: Size) => void;
+  className?: string;
+}) {
+  const tabs = shownTabs(data);
+  if (tabs.length === 0) return null;
+  const active = tabs.includes(tab) ? tab : tabs[0];
+  return (
+    <button
+      type="button"
+      onClick={() => onPanel(active, 'phone')}
+      aria-label="Open the info panel"
+      title="Facts, sky, timeline and views"
+      className={cn(
+        'pointer-events-auto flex size-11 shrink-0 items-center justify-center rounded-full border border-white/15 bg-background/75 text-foreground shadow-lg backdrop-blur-md transition-colors hover:bg-background/90 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none',
+        className
+      )}
+    >
+      <BookOpenText aria-hidden className="size-5" />
+    </button>
+  );
+}
+
 /**
- * The info panel floats over the scene in three states: an icon (full immersion),
- * phone width (read while you move the model) or expanded (focused reading). On
- * phones, open means a sheet over the lower scene. Tabs appear only with data.
+ * The info panel floats over the scene in three states: closed (full immersion; the
+ * open button is `InfoPanelButton`), phone width (read while you move the model) or
+ * expanded (focused reading). On phones, open means a sheet over the scene and its
+ * top row, under the chat bar. Tabs appear only with data.
  * The sky's date and time sit beside the tabs: a footer in the narrow panel, a
  * side column in the expanded one.
  */
@@ -44,24 +81,9 @@ export function InfoPanel({
   renderTab: (tab: Tab, wide: boolean) => ReactNode;
   renderTime?: (wide: boolean) => ReactNode;
 }) {
-  const available = availableTabs(data);
-  const tabs = (Object.keys(TAB_LABELS) as Tab[]).filter((t) => available[t]);
-  if (tabs.length === 0) return null;
+  const tabs = shownTabs(data);
+  if (tabs.length === 0 || size === 'icon') return null;
   const active = tabs.includes(tab) ? tab : tabs[0];
-
-  if (size === 'icon') {
-    return (
-      <button
-        type="button"
-        onClick={() => onPanel(active, 'phone')}
-        aria-label="Open the info panel"
-        title="Facts, sky, timeline and views"
-        className="pointer-events-auto flex size-11 items-center justify-center rounded-full border border-white/15 bg-background/75 text-foreground shadow-lg backdrop-blur-md transition-colors hover:bg-background/90 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
-      >
-        <BookOpenText aria-hidden className="size-5" />
-      </button>
-    );
-  }
 
   const wide = size === 'full';
   return (

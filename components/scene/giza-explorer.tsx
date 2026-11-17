@@ -5,7 +5,7 @@ import { useCallback, useEffect, useMemo, useState } from 'react';
 
 import { ChatBar } from '@/components/panel/chat-bar';
 import { FactsTab } from '@/components/panel/facts-tab';
-import { InfoPanel } from '@/components/panel/info-panel';
+import { InfoPanel, InfoPanelButton } from '@/components/panel/info-panel';
 import { SkyTab, type ShowInSky } from '@/components/panel/sky-tab';
 import { TimelineTab } from '@/components/panel/timeline-tab';
 import { ViewsTab } from '@/components/panel/views-tab';
@@ -320,27 +320,48 @@ export default function GizaExplorer(props: GizaExplorerProps) {
         </p>
       )}
 
-      <div className="pointer-events-none absolute inset-x-0 top-20 z-10 px-4 sm:top-18 sm:px-6">
-        <LayerBar
-          state={state}
-          hasSurviving={hasSurviving}
-          onLayer={(layer, on) => dispatch({ type: 'setLayer', layer, on })}
-          onCondition={(condition) => dispatch({ type: 'setModelCondition', condition })}
-          onView={(view) => dispatch({ type: 'setView', view })}
-        />
-      </div>
-
       {/* Floating panels share the Egypt theme in its dark variant: they sit on the scene. */}
       <div data-theme="egypt" className="dark contents">
+        {/* Top row: view and layer controls, centred, with the info panel's open button
+            at the end. Wider screens keep an equal column on the left so the controls
+            centre on the scene. An open panel takes the right side (wider screens) or
+            covers the row (phones), and the button goes. */}
+        <div
+          className={cn(
+            'pointer-events-none absolute inset-x-0 top-20 z-10 grid items-start gap-2 px-4 sm:inset-x-4 sm:top-18 sm:gap-3 sm:px-0',
+            panelOpen
+              ? 'grid-cols-1'
+              : 'grid-cols-[minmax(0,1fr)_auto] sm:grid-cols-[2.75rem_minmax(0,1fr)_2.75rem]',
+            panel.size === 'phone' && 'sm:right-104'
+          )}
+        >
+          <LayerBar
+            state={state}
+            hasSurviving={hasSurviving}
+            onLayer={(layer, on) => dispatch({ type: 'setLayer', layer, on })}
+            onCondition={(condition) => dispatch({ type: 'setModelCondition', condition })}
+            onView={(view) => dispatch({ type: 'setView', view })}
+            className={cn('row-start-1', !panelOpen && 'sm:col-start-2')}
+          />
+          {panelOpen ? null : (
+            <InfoPanelButton
+              data={props.panel}
+              tab={panel.tab}
+              onPanel={(tab, size) => dispatch({ type: 'openPanel', tab, size })}
+              className="col-start-2 row-start-1 sm:col-start-3"
+            />
+          )}
+        </div>
+
+        {/* The open panel starts at the top row and covers it on phones (and when
+            expanded); the chat bar floats over its bottom edge. */}
         <div
           className={cn(
             'pointer-events-none absolute z-20',
-            panel.size === 'icon' && 'top-34 right-3 sm:top-32 sm:right-4',
+            !panelOpen && 'hidden',
             panel.size === 'phone' &&
-              'inset-x-0 top-34 bottom-0 sm:inset-x-auto sm:top-32 sm:right-4 sm:bottom-4 sm:w-[24rem]',
-            // Expanded, it covers the control row too: same top as that row, same
-            // bottom as the chat bar.
-            panel.size === 'full' && 'inset-x-0 top-34 bottom-0 sm:inset-x-4 sm:top-18 sm:bottom-4'
+              'inset-x-0 top-20 bottom-0 sm:inset-x-auto sm:top-18 sm:right-4 sm:bottom-4 sm:w-[24rem]',
+            panel.size === 'full' && 'inset-x-0 top-20 bottom-0 sm:inset-x-4 sm:top-18 sm:bottom-4'
           )}
         >
           <InfoPanel
@@ -403,15 +424,15 @@ export default function GizaExplorer(props: GizaExplorerProps) {
           />
         </div>
 
-        {/* Wider screens: the walk readout sits top right, clear of the bottom controls
-            and left of the panel (or its icon). Phones show it under the walk pad. */}
+        {/* Wider screens: the walk readout sits top right, under the top row, clear of
+            the bottom controls and left of an open panel. Phones show it under the walk pad. */}
         {state.view === 'sky' && placed && walkInfo.show && panel.size !== 'full' ? (
           <WalkInfo
             sight={sight}
             id={`${walkInfo.id}-wide`}
             className={cn(
               'absolute top-32 z-20 max-sm:hidden',
-              panel.size === 'phone' ? 'right-108' : 'right-18'
+              panel.size === 'phone' ? 'right-108' : 'right-4'
             )}
           />
         ) : null}
