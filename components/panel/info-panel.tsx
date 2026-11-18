@@ -63,8 +63,9 @@ export function InfoPanelButton({
  * open button is `InfoPanelButton`), phone width (read while you move the model) or
  * expanded (focused reading). On phones, open means a sheet over the scene and its
  * top row, under the chat bar. Tabs appear only with data.
- * The sky's date and time sit beside the tabs: a footer in the narrow panel, a
- * side column in the expanded one.
+ * Expanded, the sky's date and time get their own column beside the tabs; otherwise
+ * they float on their own toggle (see the explorer), and `headerActions` can put
+ * that toggle in the panel's header where the sheet covers it (phones).
  */
 export function InfoPanel({
   data,
@@ -73,13 +74,16 @@ export function InfoPanel({
   onPanel,
   renderTab,
   renderTime,
+  headerActions,
 }: {
   data: PanelData;
   tab: Tab;
   size: Size;
   onPanel: (tab: Tab, size: Size) => void;
   renderTab: (tab: Tab, wide: boolean) => ReactNode;
-  renderTime?: (wide: boolean) => ReactNode;
+  /** The date and time column, shown only when expanded. */
+  renderTime?: () => ReactNode;
+  headerActions?: ReactNode;
 }) {
   const tabs = shownTabs(data);
   if (tabs.length === 0 || size === 'icon') return null;
@@ -91,7 +95,7 @@ export function InfoPanel({
       aria-label="Info panel"
       className={cn(
         'pointer-events-auto flex h-full flex-col overflow-hidden rounded-2xl border border-white/10 bg-background/88 text-foreground shadow-[0_20px_60px_-20px_rgb(0_0_0/0.7)] backdrop-blur-md',
-        // Phones: the sheet runs under the chat bar, so its footer stops above it.
+        // Phones: the sheet runs under the chat bar, so its content stops above it.
         'max-sm:rounded-b-none max-sm:pb-19'
       )}
     >
@@ -111,6 +115,7 @@ export function InfoPanel({
               </TabsTrigger>
             ))}
           </TabsList>
+          {headerActions}
           <button
             type="button"
             onClick={() => onPanel(active, wide ? 'phone' : 'full')}
@@ -134,10 +139,10 @@ export function InfoPanel({
             <X aria-hidden className="size-5" />
           </button>
         </div>
-        <div className={cn('flex min-h-0 flex-1', wide ? 'flex-row' : 'flex-col')}>
+        <div className="flex min-h-0 flex-1">
           {wide && renderTime ? (
             <div className="w-96 shrink-0 overflow-y-auto overscroll-contain border-r border-border p-5">
-              {renderTime(true)}
+              {renderTime()}
             </div>
           ) : null}
           {tabs.map((t) => (
@@ -153,11 +158,6 @@ export function InfoPanel({
               <div className={cn(wide && 'mx-auto max-w-5xl')}>{renderTab(t, wide)}</div>
             </TabsContent>
           ))}
-          {!wide && renderTime ? (
-            <div className="shrink-0 border-t border-border px-4 pt-2 pb-4">
-              {renderTime(false)}
-            </div>
-          ) : null}
         </div>
       </Tabs>
     </aside>

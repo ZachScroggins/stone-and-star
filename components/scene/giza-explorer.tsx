@@ -1,7 +1,7 @@
 'use client';
 
 import dynamic from 'next/dynamic';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useId, useMemo, useState } from 'react';
 
 import { ChatBar } from '@/components/panel/chat-bar';
 import { FactsTab } from '@/components/panel/facts-tab';
@@ -22,7 +22,7 @@ import { cn } from '@/lib/utils';
 
 import { LayerBar } from './layer-bar';
 import type { AnchorMarker, DimensionSpec } from './overlays';
-import { SkyConsole } from './sky-console';
+import { SkyConsole, SkyTimeButton } from './sky-console';
 import type { PlacedModel } from './structures';
 import { useSky } from './use-sky';
 import { useWalkInfo, WalkInfo, WalkPad, type SightReadout } from './walk-pad';
@@ -232,6 +232,29 @@ export default function GizaExplorer(props: GizaExplorerProps) {
   const panelOpen = panel.size !== 'icon';
   const [chatDraft, setChatDraft] = useState('');
   const walkInfo = useWalkInfo();
+  // The date and time: a column in the expanded panel, otherwise a card on a toggle.
+  const [timeOpen, setTimeOpen] = useState(false);
+  const timeCardId = useId();
+  const skyConsole = (
+    <SkyConsole
+      epoch={state.epoch}
+      dayOfYear={state.sky.dayOfYear}
+      solarHour={state.sky.solarHour}
+      latDeg={props.lat}
+      lonDeg={props.lon}
+      sunAltDeg={sky.result ? sky.result.sun.alt / DEG : null}
+      onEpoch={(year) => dispatch({ type: 'setEpoch', year })}
+      onSkyTime={(t) => dispatch({ type: 'setSkyTime', ...t })}
+    />
+  );
+  const timeButton = (className?: string) => (
+    <SkyTimeButton
+      open={timeOpen}
+      onToggle={() => setTimeOpen((v) => !v)}
+      controls={timeCardId}
+      className={className}
+    />
+  );
 
   // After acting on the scene from the panel, make room to see it: phones close the
   // sheet, the expanded panel narrows.
@@ -369,19 +392,9 @@ export default function GizaExplorer(props: GizaExplorerProps) {
             tab={panel.tab}
             size={panel.size}
             onPanel={(tab, size) => dispatch({ type: 'openPanel', tab, size })}
-            renderTime={(wide) => (
-              <SkyConsole
-                epoch={state.epoch}
-                dayOfYear={state.sky.dayOfYear}
-                solarHour={state.sky.solarHour}
-                latDeg={props.lat}
-                lonDeg={props.lon}
-                sunAltDeg={sky.result ? sky.result.sun.alt / DEG : null}
-                onEpoch={(year) => dispatch({ type: 'setEpoch', year })}
-                onSkyTime={(t) => dispatch({ type: 'setSkyTime', ...t })}
-                fold={!wide}
-              />
-            )}
+            renderTime={() => skyConsole}
+            // Phones: the sheet covers the top right, so the time toggle joins its header.
+            headerActions={panel.size === 'phone' ? timeButton('sm:hidden') : null}
             renderTab={(tab, wide) => {
               switch (tab) {
                 case 'facts':
@@ -424,21 +437,33 @@ export default function GizaExplorer(props: GizaExplorerProps) {
           />
         </div>
 
-        {/* Wider screens: the walk readout sits top right, under the top row, clear of
-            the bottom controls and left of an open panel. Phones show it under the walk pad. */}
-        {state.view === 'sky' && placed && walkInfo.show && panel.size !== 'full' ? (
-          <WalkInfo
-            sight={sight}
-            id={`${walkInfo.id}-wide`}
+        {/* Right-hand stack under the top row (left of an open panel): the date and time
+            toggle under the info panel's button, its card, then (wider screens) the walk
+            readout. Phones show the readout under the walk pad. The expanded panel has
+            the date and time in its own column instead. */}
+        {panel.size !== 'full' ? (
+          <div
             className={cn(
-              'absolute top-32 z-20 max-sm:hidden',
-              panel.size === 'phone' ? 'right-108' : 'right-4'
+              'pointer-events-none absolute inset-x-4 top-34 z-20 flex flex-col items-end gap-2 sm:inset-x-auto sm:top-32',
+              panel.size === 'phone' ? 'sm:right-104' : 'sm:right-4'
             )}
-          />
+          >
+            {timeButton(panel.size === 'phone' ? 'max-sm:hidden' : undefined)}
+            {timeOpen ? (
+              <div
+                id={timeCardId}
+                className="pointer-events-auto max-h-[calc(100svh-18rem)] w-full overflow-y-auto overscroll-contain rounded-2xl border border-white/10 bg-[oklch(0.16_0.012_60/0.82)] p-4 shadow-[0_20px_60px_-20px_rgb(0_0_0/0.7)] backdrop-blur-md sm:w-96 sm:p-5"
+              >
+                {skyConsole}
+              </div>
+            ) : null}
+            {state.view === 'sky' && placed && walkInfo.show ? (
+              <WalkInfo sight={sight} id={`${walkInfo.id}-wide`} className="max-sm:hidden" />
+            ) : null}
+          </div>
         ) : null}
 
-        {/* Bottom controls: the walk pad and the chat bar (the sky's date and time
-            live in the info panel). Phones stack them; wider screens put them in one
+        {/* Bottom controls: the walk pad and the chat bar. Phones stack them; wider screens put them in one
             row. An open panel takes the right side; expanded, it covers the walk pad
             and the chat bar moves over its reading column. */}
         <div
