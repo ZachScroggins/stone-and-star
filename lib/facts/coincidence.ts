@@ -11,9 +11,12 @@
 
 import type { ReferenceQuantity } from '@/lib/contracts/alignment';
 import {
+  type ExplorerSettings,
   LENGTH_QUANTITIES,
   type LengthQuantity,
   type NumericalPattern,
+  PAIRINGS,
+  type Pairing,
   type PatternTerm,
 } from '@/lib/contracts/coincidence';
 import type { Measurement } from '@/lib/contracts/site';
@@ -31,8 +34,7 @@ export interface LengthValue {
   unverified: boolean;
 }
 
-export const PAIRINGS = ['reference-over-length', 'length-over-length'] as const;
-export type Pairing = (typeof PAIRINGS)[number];
+export { PAIRINGS, type Pairing };
 
 /** Which freedoms the search uses. Every combination of them is one candidate. */
 export interface CandidateSpace {
@@ -413,5 +415,30 @@ export function testPattern(
     offset: value / pattern.target - 1,
     tolerance,
     chanceAlone: chanceOfMatch(value, [pattern.target], tolerance, false),
+  };
+}
+
+// ── Settings ────────────────────────────────────────────────────────────────────
+
+export type ResolvedSettings = Required<ExplorerSettings>;
+
+/**
+ * Fill the unset fields of a search: the whole data set, and the claim's own number
+ * (at its own closeness) with a pattern, or every family at ±0.5 % without one.
+ */
+export function resolveSettings(
+  settings: ExplorerSettings | undefined,
+  defaults: { space: CandidateSpace; pattern: PatternTest | null }
+): ResolvedSettings {
+  const { space, pattern } = defaults;
+  const set = Object.fromEntries(
+    Object.entries(settings ?? {}).filter(([, v]) => v !== undefined)
+  ) as ExplorerSettings;
+  return {
+    ...space,
+    targets: pattern ? ['claim'] : TARGET_FAMILIES.map((f) => f.slug),
+    shiftDecimal: true,
+    tolerance: pattern ? Math.min(Math.max(pattern.tolerance, 1e-4), 0.1) : 0.005,
+    ...set,
   };
 }

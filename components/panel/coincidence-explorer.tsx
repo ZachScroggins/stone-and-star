@@ -8,6 +8,7 @@ import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import type { ReferenceQuantity } from '@/lib/contracts/alignment';
 import type { Claim, Proponent } from '@/lib/contracts/claims';
 import {
+  type ExplorerSettings,
   LENGTH_QUANTITIES,
   type LengthQuantity,
   type NumericalPattern,
@@ -23,6 +24,7 @@ import {
   lengthsFrom,
   logWindow,
   type Pairing,
+  resolveSettings,
   TARGET_FAMILIES,
   testPattern,
 } from '@/lib/facts/coincidence';
@@ -243,7 +245,8 @@ function ChipGroup<T extends string>({
 /**
  * The coincidence explorer: how many ratios the stored measurements and reference
  * constants can produce, how many land near a set of target numbers, and how close
- * a match must be to stand out from chance. Remount (key) it to start over.
+ * a match must be to stand out from chance. The search lives in scene state
+ * (`settings`, shareable in the URL); unset fields take their defaults.
  */
 export function CoincidenceExplorer({
   pattern,
@@ -253,6 +256,8 @@ export function CoincidenceExplorer({
   structures,
   measurements,
   references,
+  settings,
+  onSettings,
   onPattern,
   onBack,
 }: {
@@ -263,6 +268,9 @@ export function CoincidenceExplorer({
   structures: Structure[];
   measurements: Measurement[];
   references: ReferenceQuantity[];
+  settings: ExplorerSettings | undefined;
+  /** Merged into the search; an undefined field returns to its default. */
+  onSettings: (patch: ExplorerSettings) => void;
   onPattern: (slug: string | null) => void;
   onBack: () => void;
 }) {
@@ -273,14 +281,22 @@ export function CoincidenceExplorer({
     [pattern, lengths, references]
   );
 
-  const [space, setSpace] = useState<CandidateSpace>(everything);
-  const [families, setFamilies] = useState<string[]>(
-    pattern ? ['claim'] : TARGET_FAMILIES.map((f) => f.slug)
+  const search = useMemo(
+    () => resolveSettings(settings, { space: everything, pattern: own }),
+    [settings, everything, own]
   );
-  const [shiftDecimal, setShiftDecimal] = useState(true);
-  const [tolerance, setTolerance] = useState(() =>
-    own ? Math.min(Math.max(own.tolerance, 10 ** TOL_MIN_LOG), 10 ** TOL_MAX_LOG) : 0.005
+  const { targets: families, shiftDecimal, tolerance } = search;
+  const space: CandidateSpace = useMemo(
+    () => ({
+      structures: search.structures,
+      lengths: search.lengths,
+      conditions: search.conditions,
+      references: search.references,
+      pairings: search.pairings,
+    }),
+    [search]
   );
+  const setSpace = (patch: Partial<CandidateSpace>) => onSettings(patch);
 
   const names: Names = useMemo(
     () => ({
@@ -338,7 +354,15 @@ export function CoincidenceExplorer({
       <div className="flex flex-wrap gap-2">
         <button
           type="button"
-          onClick={() => setSpace(everything)}
+          onClick={() =>
+            setSpace({
+              structures: undefined,
+              lengths: undefined,
+              conditions: undefined,
+              references: undefined,
+              pairings: undefined,
+            })
+          }
           className="min-h-11 rounded-full border border-border px-4 text-sm hover:bg-foreground/10 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
         >
           Use everything
@@ -359,7 +383,7 @@ export function CoincidenceExplorer({
         label="Target numbers"
         options={familyOptions}
         value={families}
-        onChange={setFamilies}
+        onChange={(targets) => onSettings({ targets })}
       />
       <ul className="space-y-1 text-xs/relaxed text-muted-foreground">
         {TARGET_FAMILIES.filter((f) => families.includes(f.slug)).map((f) => (
@@ -379,7 +403,7 @@ export function CoincidenceExplorer({
         <input
           type="checkbox"
           checked={shiftDecimal}
-          onChange={(e) => setShiftDecimal(e.target.checked)}
+          onChange={(e) => onSettings({ shiftDecimal: e.target.checked })}
           className="mt-0.5 size-5 shrink-0 accent-(--star)"
         />
       </label>
@@ -395,8 +419,12 @@ export function CoincidenceExplorer({
           aria-labelledby="cx-tolerance"
           min={0}
           max={1000}
-          value={[toSlider(tolerance)]}
-          onValueChange={(v) => setTolerance(fromSlider(Array.isArray(v) ? v[0] : v))}
+          value={[Math.min(Math.max(toSlider(tolerance), 0), 1000)]}
+          onValueChange={(v) =>
+            onSettings({
+              tolerance: Number(fromSlider(Array.isArray(v) ? v[0] : v).toPrecision(4)),
+            })
+          }
           className="py-3"
         />
       </div>
@@ -406,7 +434,7 @@ export function CoincidenceExplorer({
         label="Structures"
         options={everything.structures.map((s) => ({ value: s, label: names.structure(s) }))}
         value={space.structures}
-        onChange={(structures) => setSpace({ ...space, structures })}
+        onChange={(structures) => setSpace({ structures })}
       />
       <ChipGroup
         id="cx-lengths"
@@ -416,14 +444,14 @@ export function CoincidenceExplorer({
           label: LENGTH_LABELS[q][0].toUpperCase() + LENGTH_LABELS[q].slice(1),
         }))}
         value={space.lengths}
-        onChange={(l) => setSpace({ ...space, lengths: l })}
+        onChange={(l) => setSpace({ lengths: l })}
       />
       <ChipGroup
         id="cx-conditions"
         label="Measured as"
         options={everything.conditions.map((c) => ({ value: c, label: CONDITION_LABELS[c] }))}
         value={space.conditions}
-        onChange={(c) => setSpace({ ...space, conditions: c as MeasurementCondition[] })}
+        onChange={(c) => setSpace({ conditions: c as MeasurementCondition[] })}
       />
       <ChipGroup
         id="cx-references"
@@ -433,14 +461,14 @@ export function CoincidenceExplorer({
           label: r.name.replace(/^Earth’s /, '').replace(/^./, (c) => c.toUpperCase()),
         }))}
         value={space.references}
-        onChange={(r) => setSpace({ ...space, references: r })}
+        onChange={(r) => setSpace({ references: r })}
       />
       <ChipGroup
         id="cx-pairings"
         label="Ratios of"
         options={everything.pairings.map((p) => ({ value: p, label: PAIRING_LABELS[p] }))}
         value={space.pairings}
-        onChange={(p) => setSpace({ ...space, pairings: p })}
+        onChange={(p) => setSpace({ pairings: p })}
       />
     </section>
   );

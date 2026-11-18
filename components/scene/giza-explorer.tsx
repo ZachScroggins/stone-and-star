@@ -410,6 +410,7 @@ export default function GizaExplorer(props: GizaExplorerProps) {
                       onFocusStructure={onFocusStructure}
                       onOpenExplorer={(pattern) => dispatch({ type: 'openExplorer', pattern })}
                       onCloseExplorer={() => dispatch({ type: 'closeExplorer' })}
+                      onExplorerSettings={(settings) => dispatch({ type: 'setExplorer', settings })}
                     />
                   );
                 case 'sky':

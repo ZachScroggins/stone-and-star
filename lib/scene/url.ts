@@ -13,9 +13,49 @@ import type { SceneState } from './state';
 //   &at=29.976012,31.137021&look=315,25   (standpoint: lat,lon and heading,pitch in degrees)
 //   &panel=views.phone                     (info panel tab and size; omitted when it is the default)
 //   &explorer=1&pattern=height-times-43200-polar-radius   (coincidence explorer, M4)
+//   &structures=great-pyramid&lengths=height,perimeter&conditions=as_built&constants=earth-polar-radius
+//   &ratios=reference-over-length&numbers=claim,precession&decimal=fixed&tol=0.0037
+//                                          (explorer search; only set fields, only while it is open)
 // Unknown or invalid parameters fall back to the current state's values.
 
 const round = (x: number, digits: number) => Number(x.toFixed(digits));
+
+type Settings = NonNullable<NonNullable<SceneState['explorer']>['settings']>;
+type ListKey = 'structures' | 'lengths' | 'conditions' | 'references' | 'pairings' | 'targets';
+/** Explorer list settings and their query parameter names. */
+const LIST_PARAMS: [ListKey, string][] = [
+  ['structures', 'structures'],
+  ['lengths', 'lengths'],
+  ['conditions', 'conditions'],
+  ['references', 'constants'],
+  ['pairings', 'ratios'],
+  ['targets', 'numbers'],
+];
+
+function writeSettings(p: URLSearchParams, s: Settings) {
+  for (const [key, name] of LIST_PARAMS) {
+    const list = s[key];
+    if (list) p.set(name, list.join(','));
+  }
+  if (s.shiftDecimal !== undefined) p.set('decimal', s.shiftDecimal ? 'shifted' : 'fixed');
+  if (s.tolerance !== undefined) p.set('tol', String(Number(s.tolerance.toPrecision(4))));
+}
+
+/** Settings from the query; invalid values are kept so validation rejects the link. */
+function readSettings(params: URLSearchParams): Record<string, unknown> | undefined {
+  const out: Record<string, unknown> = {};
+  for (const [key, name] of LIST_PARAMS) {
+    const raw = params.get(name);
+    if (raw !== null) out[key] = raw.split(',').filter(Boolean);
+  }
+  const decimal = params.get('decimal');
+  if (decimal !== null) {
+    out.shiftDecimal = decimal === 'shifted' ? true : decimal === 'fixed' ? false : decimal;
+  }
+  const tol = params.get('tol');
+  if (tol !== null) out.tolerance = tol.trim() === '' ? tol : Number(tol);
+  return Object.keys(out).length > 0 ? out : undefined;
+}
 
 /** `a,b` to two finite numbers, or undefined. */
 function pair(raw: string | null): [number, number] | undefined {
@@ -57,6 +97,7 @@ export function sceneToSearchParams(state: SceneState): URLSearchParams {
   if (state.explorer) {
     p.set('explorer', '1');
     if (state.explorer.pattern) p.set('pattern', state.explorer.pattern);
+    if (state.explorer.settings) writeSettings(p, state.explorer.settings);
   }
   if (state.standpoint) {
     const { lat, lon, heading, pitch } = state.standpoint;
@@ -80,6 +121,8 @@ export function sceneFromSearchParams(params: URLSearchParams, fallback: SceneSt
   const model = params.get('model');
   const view = params.get('view');
 
+  const settings = params.get('explorer') === '1' ? readSettings(params) : undefined;
+
   const candidate = {
     ...fallback,
     epoch: num('year') ?? fallback.epoch,
@@ -98,7 +141,10 @@ export function sceneFromSearchParams(params: URLSearchParams, fallback: SceneSt
       : 'overview',
     standpoint: standpointFrom(params, fallback.standpoint),
     panel: panelFrom(params.get('panel'), fallback.panel),
-    explorer: params.get('explorer') === '1' ? { pattern: params.get('pattern') } : null,
+    explorer:
+      params.get('explorer') === '1'
+        ? { pattern: params.get('pattern'), ...(settings && { settings }) }
+        : null,
   };
   const parsed = SceneStateV1.safeParse(candidate);
   if (!parsed.success) return fallback;

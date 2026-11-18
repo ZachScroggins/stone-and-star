@@ -22,6 +22,31 @@ export const LENGTH_QUANTITIES = [
 ] as const;
 export type LengthQuantity = (typeof LENGTH_QUANTITIES)[number];
 
+/** Which kinds of ratio a search makes. */
+export const PAIRINGS = ['reference-over-length', 'length-over-length'] as const;
+export type Pairing = (typeof PAIRINGS)[number];
+
+/**
+ * A coincidence-explorer search, as scene state (URL, UI and chat share it). Every
+ * field is optional: a missing field means the default (everything the data offers;
+ * targets are the claim's number with a pattern, every family without one).
+ */
+export const ExplorerSettings = z.object({
+  structures: z.array(Slug).max(50).optional(),
+  lengths: z.array(z.enum(LENGTH_QUANTITIES)).optional(),
+  conditions: z.array(z.enum(MEASUREMENT_CONDITIONS)).optional(),
+  /** Reference quantity slugs. */
+  references: z.array(Slug).max(50).optional(),
+  pairings: z.array(z.enum(PAIRINGS)).optional(),
+  /** Target families: `claim` (the pattern's own number) or a family slug. */
+  targets: z.array(Slug).max(20).optional(),
+  /** Count 432, 4,320 and 43,200 as one number. */
+  shiftDecimal: z.boolean().optional(),
+  /** Relative tolerance, e.g. 0.005 for ±0.5 %. */
+  tolerance: z.number().positive().max(1).optional(),
+});
+export type ExplorerSettings = z.infer<typeof ExplorerSettings>;
+
 /** One side of a ratio: a reference constant, or a length of a structure in one condition. */
 export const PatternTerm = z.discriminatedUnion('kind', [
   z.object({ kind: z.literal('reference'), slug: Slug }),

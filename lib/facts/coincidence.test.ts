@@ -14,6 +14,7 @@ import {
   fullSpace,
   lengthsFrom,
   logWindow,
+  resolveSettings,
   ROUND_NUMBERS,
   standOutTolerance,
   TARGET_FAMILIES,
@@ -234,5 +235,41 @@ describe('testPattern (height × 43,200 = polar radius)', () => {
       },
     };
     expect(testPattern(missing, lengths, references)).toBeNull();
+  });
+});
+
+describe('resolveSettings', () => {
+  const space = fullSpace(lengths, references);
+
+  it('defaults to everything, every family and ±0.5 % without a pattern', () => {
+    const s = resolveSettings(undefined, { space, pattern: null });
+    expect(s).toEqual({
+      ...space,
+      targets: TARGET_FAMILIES.map((f) => f.slug),
+      shiftDecimal: true,
+      tolerance: 0.005,
+    });
+  });
+
+  it('defaults to the claim’s number at its own closeness with a pattern', () => {
+    const pattern = testPattern(
+      {
+        numerator: { kind: 'reference', slug: 'earth-polar-radius' },
+        denominator: {
+          kind: 'length',
+          structureSlug: 'great-pyramid',
+          length: 'height',
+          condition: 'as_built',
+        },
+        target: 43_200,
+      },
+      lengths,
+      references
+    );
+    const s = resolveSettings({ shiftDecimal: false, tolerance: undefined }, { space, pattern });
+    expect(s.targets).toEqual(['claim']);
+    expect(s.tolerance).toBeCloseTo(pattern!.tolerance, 12);
+    expect(s.shiftDecimal).toBe(false);
+    expect(s.structures).toEqual(space.structures);
   });
 });

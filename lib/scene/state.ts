@@ -66,6 +66,17 @@ export function reduceScene(state: SceneState, action: SceneAction): SceneState 
       };
     case 'closeExplorer':
       return { ...state, explorer: null };
+    case 'setExplorer': {
+      const merged = { ...state.explorer?.settings, ...action.settings };
+      const settings = Object.fromEntries(
+        Object.entries(merged).filter(([, v]) => v !== undefined)
+      );
+      return {
+        ...state,
+        explorer: { pattern: state.explorer?.pattern ?? null, settings },
+        panel: state.explorer ? state.panel : { tab: 'facts', size: 'full' },
+      };
+    }
   }
 }
 

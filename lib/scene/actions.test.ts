@@ -17,6 +17,19 @@ describe('SceneAction', () => {
       { type: 'openExplorer' },
       { type: 'openExplorer', pattern: 'height-times-43200-polar-radius' },
       { type: 'closeExplorer' },
+      {
+        type: 'setExplorer',
+        settings: {
+          structures: ['great-pyramid'],
+          lengths: ['height', 'perimeter'],
+          conditions: ['as_built'],
+          references: [],
+          pairings: ['reference-over-length'],
+          targets: ['claim', 'precession'],
+          shiftDecimal: false,
+          tolerance: 0.0037,
+        },
+      },
     ];
     for (const action of actions) {
       expect(SceneAction.safeParse(action).success).toBe(true);
@@ -34,6 +47,9 @@ describe('SceneAction', () => {
       { type: 'setStandpoint', standpoint: { lat: 29.97, lon: 31.13, heading: 400, pitch: 25 } },
       { type: 'setStandpoint' },
       { type: 'openExplorer', pattern: 'Not A Slug' },
+      { type: 'setExplorer', settings: { lengths: ['volume'] } },
+      { type: 'setExplorer', settings: { tolerance: 0 } },
+      { type: 'setExplorer', settings: { tolerance: 2 } },
     ];
     for (const action of bad) {
       expect(SceneAction.safeParse(action).success).toBe(false);

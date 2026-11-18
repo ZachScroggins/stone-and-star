@@ -6,7 +6,7 @@ import { useState } from 'react';
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import type { ReferenceQuantity } from '@/lib/contracts/alignment';
 import type { Claim, Proponent } from '@/lib/contracts/claims';
-import type { NumericalPattern } from '@/lib/contracts/coincidence';
+import type { ExplorerSettings, NumericalPattern } from '@/lib/contracts/coincidence';
 import { MEASUREMENT_PROPERTIES, type Measurement, type Structure } from '@/lib/contracts/site';
 import { CONDITION_LABELS, formatMeasurementValue } from '@/lib/facts/format';
 import { formatRatio, ratioOf } from '@/lib/facts/ratio';
@@ -35,6 +35,7 @@ export function FactsTab({
   onFocusStructure,
   onOpenExplorer,
   onCloseExplorer,
+  onExplorerSettings,
 }: {
   structures: Structure[];
   measurements: Measurement[];
@@ -42,17 +43,20 @@ export function FactsTab({
   patterns: NumericalPattern[];
   claims: Claim[];
   proponents: Proponent[];
-  explorer: { pattern: string | null } | null;
+  explorer: { pattern: string | null; settings?: ExplorerSettings } | null;
   onFocusStructure: (structureSlug: string) => void;
   onOpenExplorer: (pattern?: string) => void;
   onCloseExplorer: () => void;
+  onExplorerSettings: (patch: ExplorerSettings) => void;
 }) {
   if (explorer) {
     const pattern = patterns.find((p) => p.slug === explorer.pattern) ?? null;
     return (
       <CoincidenceExplorer
-        // A new pattern starts a fresh search.
+        // A new pattern starts afresh (the reducer also clears its settings).
         key={pattern?.slug ?? 'none'}
+        settings={explorer.settings}
+        onSettings={onExplorerSettings}
         pattern={pattern}
         patterns={patterns}
         claims={claims}

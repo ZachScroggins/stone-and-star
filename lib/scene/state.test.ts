@@ -37,6 +37,19 @@ describe('reduceScene', () => {
     expect(s.panel).toEqual({ tab: 'facts', size: 'full' });
   });
 
+  it('merges explorer settings, and a new pattern starts a fresh search', () => {
+    let s = reduceScene(base, { type: 'setExplorer', settings: { tolerance: 0.01 } });
+    // Setting a search opens the explorer.
+    expect(s.explorer).toEqual({ pattern: null, settings: { tolerance: 0.01 } });
+    s = reduceScene(s, { type: 'setExplorer', settings: { shiftDecimal: false } });
+    expect(s.explorer?.settings).toEqual({ tolerance: 0.01, shiftDecimal: false });
+    // `undefined` returns a field to its default.
+    s = reduceScene(s, { type: 'setExplorer', settings: { tolerance: undefined } });
+    expect(s.explorer?.settings).toEqual({ shiftDecimal: false });
+    s = reduceScene(s, { type: 'openExplorer', pattern: 'height-times-43200-polar-radius' });
+    expect(s.explorer).toEqual({ pattern: 'height-times-43200-polar-radius' });
+  });
+
   it('does not mutate the previous state', () => {
     reduceScene(base, { type: 'setLayer', layer: 'dimensions', on: true });
     expect(base.layers.dimensions).toBe(false);
@@ -71,6 +84,40 @@ describe('scene URL state', () => {
       expect(sceneFromSearchParams(params, base)).toEqual(s);
     }
     expect(sceneToSearchParams(base).has('explorer')).toBe(false);
+
+    const settings = {
+      structures: ['great-pyramid', 'khafre-pyramid'],
+      lengths: ['height' as const],
+      conditions: ['as_built' as const],
+      references: [],
+      pairings: ['reference-over-length' as const, 'length-over-length' as const],
+      targets: ['claim', 'precession'],
+      shiftDecimal: false,
+      tolerance: 0.003734,
+    };
+    const s = {
+      ...base,
+      explorer: { pattern: 'height-times-43200-polar-radius', settings },
+      panel: { tab: 'facts' as const, size: 'full' as const },
+    };
+    const params = new URLSearchParams(sceneToSearchParams(s).toString());
+    expect(params.get('structures')).toBe('great-pyramid,khafre-pyramid');
+    expect(params.get('constants')).toBe('');
+    expect(params.get('decimal')).toBe('fixed');
+    expect(params.get('tol')).toBe('0.003734');
+    expect(sceneFromSearchParams(params, base)).toEqual(s);
+    // Unset fields stay out of the link.
+    const plain = sceneToSearchParams({ ...s, explorer: { pattern: null, settings: {} } });
+    const settingKeys = ['structures', 'lengths', 'conditions', 'constants', 'ratios', 'numbers'];
+    expect([...plain.keys()].filter((k) => [...settingKeys, 'decimal', 'tol'].includes(k))).toEqual(
+      []
+    );
+    // A closed explorer ignores search parameters.
+    expect(
+      sceneFromSearchParams(new URLSearchParams('v=1&structures=great-pyramid'), base).explorer
+    ).toBeNull();
+    // An invalid setting rejects the link, like any other bad parameter.
+    expect(sceneFromSearchParams(new URLSearchParams('v=1&explorer=1&tol=5'), base)).toBe(base);
     expect(sceneFromSearchParams(new URLSearchParams('v=1'), base).explorer).toBeNull();
   });
 
