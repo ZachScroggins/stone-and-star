@@ -2,6 +2,7 @@ import { z } from 'zod';
 
 import { AlignmentHypothesis, ReferenceQuantity } from '@/lib/contracts/alignment';
 import { Claim, Proponent, Question, Source } from '@/lib/contracts/claims';
+import { NumericalPattern } from '@/lib/contracts/coincidence';
 import { Anchor, Measurement, Site, Structure } from '@/lib/contracts/site';
 import { TimelineEvent } from '@/lib/contracts/timeline';
 import type { SiteData } from '@/lib/data/types';
@@ -10,6 +11,7 @@ import { gizaAnchors, gizaMeasurements, gizaSite, gizaStructures } from './giza'
 import {
   gizaAlignments,
   gizaClaims,
+  gizaPatterns,
   gizaProponents,
   gizaQuestions,
   gizaSources,
@@ -30,6 +32,7 @@ const claims = z.array(Claim).parse(gizaClaims);
 const timeline = z.array(TimelineEvent).parse(gizaTimeline);
 const alignments = z.array(AlignmentHypothesis).parse(gizaAlignments);
 const references = z.array(ReferenceQuantity).parse(referenceQuantities);
+const patterns = z.array(NumericalPattern).parse(gizaPatterns);
 
 function assertUnique(kind: string, slugs: string[]) {
   const seen = new Set<string>();
@@ -81,6 +84,7 @@ for (const [kind, records] of [
   ['timeline event', timeline],
   ['alignment', alignments],
   ['reference quantity', references],
+  ['numerical pattern', patterns],
 ] as const) {
   assertUnique(
     kind,
@@ -118,6 +122,16 @@ for (const a of alignments) {
   assertKnown('site', a.siteSlug, sites, `Alignment ${a.slug}`);
   structureRef(a.structureSlug, `Alignment ${a.slug}`);
   if (a.claimSlug) assertKnown('claim', a.claimSlug, claims, `Alignment ${a.slug}`);
+}
+
+for (const p of patterns) {
+  const from = `Numerical pattern ${p.slug}`;
+  assertKnown('site', p.siteSlug, sites, from);
+  if (p.claimSlug) assertKnown('claim', p.claimSlug, claims, from);
+  for (const t of [p.numerator, p.denominator]) {
+    if (t.kind === 'reference') assertKnown('reference quantity', t.slug, references, from);
+    else structureRef(t.structureSlug, from);
+  }
 }
 
 const preferredKeys = measurements
@@ -163,6 +177,9 @@ export const mockSiteData: SiteData = {
   },
   async listReferenceQuantities() {
     return references;
+  },
+  async listPatterns(siteSlug) {
+    return patterns.filter((p) => p.siteSlug === siteSlug);
   },
 };
 

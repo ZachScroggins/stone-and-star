@@ -1,5 +1,7 @@
 import { z } from 'zod';
 
+import { ExplorerSettings } from '@/lib/contracts/coincidence';
+
 // Typed scene actions. UI controls and the chatbot's client tools dispatch the same
 // actions to one scene store (lib/scene/store.ts).
 // Additive changes only: new action types or new optional fields.
@@ -68,6 +70,18 @@ export const SceneAction = z.discriminatedUnion('type', [
   z.object({ type: z.literal('setView'), view: z.enum(SCENE_VIEWS) }),
   /** Added in M2. `null` returns to the site's default standpoint. */
   z.object({ type: z.literal('setStandpoint'), standpoint: Standpoint.nullable() }),
+  /**
+   * Added in M4. Opens the coincidence explorer in the expanded Facts tab, set up
+   * for a numerical-pattern slug, or for the whole data set when none is given.
+   */
+  z.object({ type: z.literal('openExplorer'), pattern: slug.optional() }),
+  /** Added in M4. Returns the Facts tab to the measurements. */
+  z.object({ type: z.literal('closeExplorer') }),
+  /**
+   * Added in M4. Changes the explorer's search (merged into the current one; an
+   * undefined field returns to its default). Opens the explorer if it is closed.
+   */
+  z.object({ type: z.literal('setExplorer'), settings: ExplorerSettings }),
 ]);
 export type SceneAction = z.infer<typeof SceneAction>;
 
@@ -86,5 +100,10 @@ export const SceneStateV1 = z.object({
   view: z.enum(SCENE_VIEWS).optional(),
   /** Added in M2. `null` means the site's default standpoint. */
   standpoint: Standpoint.nullable().optional(),
+  /** Added in M4. `null` means the coincidence explorer is closed. */
+  explorer: z
+    .object({ pattern: slug.nullable(), settings: ExplorerSettings.optional() })
+    .nullable()
+    .optional(),
 });
 export type SceneStateV1 = z.infer<typeof SceneStateV1>;

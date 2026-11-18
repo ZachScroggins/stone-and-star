@@ -1,5 +1,6 @@
 import type { AlignmentHypothesis, ReferenceQuantity } from '@/lib/contracts/alignment';
 import type { Claim, Proponent, Question, Source } from '@/lib/contracts/claims';
+import type { NumericalPattern } from '@/lib/contracts/coincidence';
 import type { Measurement, Structure } from '@/lib/contracts/site';
 import type { TimelineEvent } from '@/lib/contracts/timeline';
 
@@ -16,17 +17,20 @@ export interface PanelData {
   sources: Source[];
   timeline: TimelineEvent[];
   alignments: AlignmentHypothesis[];
+  patterns: NumericalPattern[];
 }
 
 export async function getPanelData(data: SiteData, siteSlug: string): Promise<PanelData> {
-  const [structures, claims, questions, timeline, alignments, references] = await Promise.all([
-    data.listStructures(siteSlug),
-    data.listClaims(siteSlug),
-    data.listQuestions(siteSlug),
-    data.listTimeline(siteSlug),
-    data.listAlignments(siteSlug),
-    data.listReferenceQuantities(),
-  ]);
+  const [structures, claims, questions, timeline, alignments, references, patterns] =
+    await Promise.all([
+      data.listStructures(siteSlug),
+      data.listClaims(siteSlug),
+      data.listQuestions(siteSlug),
+      data.listTimeline(siteSlug),
+      data.listAlignments(siteSlug),
+      data.listReferenceQuantities(),
+      data.listPatterns(siteSlug),
+    ]);
   const measurements = (
     await Promise.all(structures.map((s) => data.getMeasurements(s.slug)))
   ).flat();
@@ -51,6 +55,7 @@ export async function getPanelData(data: SiteData, siteSlug: string): Promise<Pa
     sources,
     timeline,
     alignments,
+    patterns,
   };
 }
 

@@ -1,32 +1,106 @@
 'use client';
 
-import { Crosshair } from 'lucide-react';
+import { Crosshair, Sigma } from 'lucide-react';
 import { useState } from 'react';
 
 import { ToggleGroup, ToggleGroupItem } from '@/components/ui/toggle-group';
 import type { ReferenceQuantity } from '@/lib/contracts/alignment';
+import type { Claim, Proponent } from '@/lib/contracts/claims';
+import type { ExplorerSettings, NumericalPattern } from '@/lib/contracts/coincidence';
 import { MEASUREMENT_PROPERTIES, type Measurement, type Structure } from '@/lib/contracts/site';
 import { CONDITION_LABELS, formatMeasurementValue } from '@/lib/facts/format';
 import { formatRatio, ratioOf } from '@/lib/facts/ratio';
 
-import { PanelHeading, UnverifiedNote } from './labels';
+import { CoincidenceExplorer } from './coincidence-explorer';
+import { ClaimLabels, PanelHeading, UnverifiedNote } from './labels';
 
 const lengthLike = (m: Measurement) => MEASUREMENT_PROPERTIES[m.property].unit === 'm';
 
+const pillButton =
+  'inline-flex min-h-11 items-center gap-1.5 rounded-full border border-border px-4 text-sm hover:bg-foreground/10 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none';
+
 /**
  * Measurements per structure, and their ratios against one Earth constant at a time.
- * Every ratio names the measurement and the constant it used.
+ * Every ratio names the measurement and the constant it used. With the coincidence
+ * explorer open (scene state), the tab shows the explorer instead.
  */
 export function FactsTab({
   structures,
   measurements,
   references,
+  patterns,
+  claims,
+  proponents,
+  explorer,
   onFocusStructure,
+  onOpenExplorer,
+  onCloseExplorer,
+  onExplorerSettings,
 }: {
   structures: Structure[];
   measurements: Measurement[];
   references: ReferenceQuantity[];
+  patterns: NumericalPattern[];
+  claims: Claim[];
+  proponents: Proponent[];
+  explorer: { pattern: string | null; settings?: ExplorerSettings } | null;
   onFocusStructure: (structureSlug: string) => void;
+  onOpenExplorer: (pattern?: string) => void;
+  onCloseExplorer: () => void;
+  onExplorerSettings: (patch: ExplorerSettings) => void;
+}) {
+  if (explorer) {
+    const pattern = patterns.find((p) => p.slug === explorer.pattern) ?? null;
+    return (
+      <CoincidenceExplorer
+        // A new pattern starts afresh (the reducer also clears its settings).
+        key={pattern?.slug ?? 'none'}
+        settings={explorer.settings}
+        onSettings={onExplorerSettings}
+        pattern={pattern}
+        patterns={patterns}
+        claims={claims}
+        proponents={proponents}
+        structures={structures}
+        measurements={measurements}
+        references={references}
+        onPattern={(slug) => onOpenExplorer(slug ?? undefined)}
+        onBack={onCloseExplorer}
+      />
+    );
+  }
+  return (
+    <Facts
+      structures={structures}
+      measurements={measurements}
+      references={references}
+      patterns={patterns}
+      claims={claims}
+      proponents={proponents}
+      onFocusStructure={onFocusStructure}
+      onOpenExplorer={onOpenExplorer}
+    />
+  );
+}
+
+function Facts({
+  structures,
+  measurements,
+  references,
+  patterns,
+  claims,
+  proponents,
+  onFocusStructure,
+  onOpenExplorer,
+}: {
+  structures: Structure[];
+  measurements: Measurement[];
+  references: ReferenceQuantity[];
+  patterns: NumericalPattern[];
+  claims: Claim[];
+  proponents: Proponent[];
+  onFocusStructure: (structureSlug: string) => void;
+  onOpenExplorer: (pattern?: string) => void;
 }) {
   const [refSlug, setRefSlug] = useState(references[0]?.slug ?? '');
   const reference = references.find((r) => r.slug === refSlug) ?? references[0];
@@ -123,10 +197,44 @@ export function FactsTab({
               placeholder values on this page.
             </p>
             <p>
-              Whether a ratio stands out from chance is what the coincidence explorer will test
-              (milestone 4).
+              Whether a ratio stands out from chance depends on how many ratios were searched. The
+              coincidence explorer counts them.
             </p>
           </div>
+          <button type="button" onClick={() => onOpenExplorer()} className={pillButton}>
+            <Sigma aria-hidden className="size-4" />
+            Open the coincidence explorer
+          </button>
+        </section>
+      ) : null}
+
+      {patterns.length > 0 ? (
+        <section aria-labelledby="facts-patterns" className="space-y-4">
+          <PanelHeading id="facts-patterns">Numerical patterns</PanelHeading>
+          {patterns.map((p) => {
+            const claim = claims.find((c) => c.slug === p.claimSlug);
+            const who = claim
+              ? proponents.filter((pr) => claim.proponentSlugs.includes(pr.slug))
+              : [];
+            return (
+              <article
+                key={p.slug}
+                className="space-y-3 rounded-xl border border-border bg-background/40 p-4"
+              >
+                <p className="text-base/snug">{claim?.statement ?? p.title}</p>
+                {claim ? <ClaimLabels reception={claim.reception} basis={claim.basis} /> : null}
+                {who.length > 0 ? (
+                  <p className="text-sm text-muted-foreground">
+                    Argued by {who.map((pr) => pr.name).join(', ')}
+                  </p>
+                ) : null}
+                <button type="button" onClick={() => onOpenExplorer(p.slug)} className={pillButton}>
+                  <Sigma aria-hidden className="size-4" />
+                  Test against chance
+                </button>
+              </article>
+            );
+          })}
         </section>
       ) : null}
 

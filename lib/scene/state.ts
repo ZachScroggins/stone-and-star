@@ -25,6 +25,7 @@ export function initialSceneState(now: { year: number; dayOfYear: number }): Sce
     condition: 'surviving',
     view: 'overview',
     standpoint: null,
+    explorer: null,
   };
 }
 
@@ -57,6 +58,25 @@ export function reduceScene(state: SceneState, action: SceneAction): SceneState 
       return { ...state, view: action.view };
     case 'setStandpoint':
       return { ...state, standpoint: action.standpoint && { ...action.standpoint } };
+    case 'openExplorer':
+      return {
+        ...state,
+        explorer: { pattern: action.pattern ?? null },
+        panel: { tab: 'facts', size: 'full' },
+      };
+    case 'closeExplorer':
+      return { ...state, explorer: null };
+    case 'setExplorer': {
+      const merged = { ...state.explorer?.settings, ...action.settings };
+      const settings = Object.fromEntries(
+        Object.entries(merged).filter(([, v]) => v !== undefined)
+      );
+      return {
+        ...state,
+        explorer: { pattern: state.explorer?.pattern ?? null, settings },
+        panel: state.explorer ? state.panel : { tab: 'facts', size: 'full' },
+      };
+    }
   }
 }
 
