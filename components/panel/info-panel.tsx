@@ -7,7 +7,6 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import type { PanelData } from '@/lib/data/panel';
 import { availableTabs } from '@/lib/data/panel';
 import type { SceneState } from '@/lib/scene/state';
-import { useEdgeFade } from '@/lib/use-edge-fade';
 import { cn } from '@/lib/utils';
 
 type Tab = SceneState['panel']['tab'];
@@ -86,7 +85,6 @@ export function InfoPanel({
   renderTime?: () => ReactNode;
   headerActions?: ReactNode;
 }) {
-  const [tabListRef, tabFade] = useEdgeFade<HTMLDivElement>();
   const tabs = shownTabs(data);
   if (tabs.length === 0 || size === 'icon') return null;
   const active = tabs.includes(tab) ? tab : tabs[0];
@@ -107,14 +105,13 @@ export function InfoPanel({
         className="flex min-h-0 flex-1 flex-col gap-0"
       >
         <div className="flex items-center gap-1 border-b border-border px-2 py-1.5">
+          {/* No scrolling: the tabs fit the header (tighter padding on phones). */}
           <TabsList
-            ref={tabListRef}
-            style={tabFade}
             variant="line"
-            className="h-11 min-w-0 flex-1 justify-start overflow-x-auto scrollbar-none"
+            className="min-w-0 flex-1 justify-start p-0 group-data-horizontal/tabs:h-11"
           >
             {tabs.map((t) => (
-              <TabsTrigger key={t} value={t} className="h-11 flex-none px-3 text-sm">
+              <TabsTrigger key={t} value={t} className="h-11 flex-none px-2 text-sm sm:px-2.5">
                 {TAB_LABELS[t]}
               </TabsTrigger>
             ))}
