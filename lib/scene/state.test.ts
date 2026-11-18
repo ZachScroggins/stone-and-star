@@ -43,10 +43,12 @@ describe('scene URL state', () => {
       condition: 'as_built' as const,
       view: 'sky' as const,
       standpoint: { lat: 29.976012, lon: 31.137021, heading: 297.5, pitch: 18.2 },
+      panel: { tab: 'views' as const, size: 'phone' as const },
     };
     const params = new URLSearchParams(sceneToSearchParams(s).toString());
     expect(params.get('at')).toBe('29.976012,31.137021');
     expect(params.get('look')).toBe('297.5,18.2');
+    expect(params.get('panel')).toBe('views.phone');
     expect(sceneFromSearchParams(params, base)).toEqual(s);
   });
 

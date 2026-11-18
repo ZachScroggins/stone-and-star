@@ -1,6 +1,6 @@
 'use client';
 
-import { ChevronDown, Minus, Plus } from 'lucide-react';
+import { CalendarClock, Minus, Plus } from 'lucide-react';
 import { useMemo, useState } from 'react';
 
 import { Slider } from '@/components/ui/slider';
@@ -30,6 +30,7 @@ interface Props {
   sunAltDeg: number | null;
   onEpoch: (year: number) => void;
   onSkyTime: (t: { dayOfYear?: number; solarHour?: number }) => void;
+  className?: string;
 }
 
 function formatHour(h: number) {
@@ -78,7 +79,7 @@ function YearInput({ epoch, onEpoch }: { epoch: number; onEpoch: (y: number) => 
         onKeyDown={(e) => {
           if (e.key === 'Enter') e.currentTarget.blur();
         }}
-        className="w-[4.6ch] min-w-0 bg-transparent tracking-normal sm:w-[4.8ch] font-display text-[2rem] leading-none sm:text-5xl font-semibold sm:tracking-wide text-[oklch(0.95_0.03_85)] tabular-nums outline-none focus-visible:underline focus-visible:decoration-[oklch(0.8_0.12_85)] focus-visible:underline-offset-8"
+        className="w-[4.6ch] min-w-0 bg-transparent font-display text-[2rem] leading-none font-semibold text-foreground tabular-nums outline-none focus-visible:underline focus-visible:decoration-primary focus-visible:underline-offset-8"
       />
       <ToggleGroup
         value={[era]}
@@ -94,7 +95,7 @@ function YearInput({ epoch, onEpoch }: { epoch: number; onEpoch: (y: number) => 
           <ToggleGroupItem
             key={e}
             value={e}
-            className="h-11 min-w-11 px-2 text-sm sm:px-2.5 text-[oklch(0.8_0.03_85)] data-pressed:bg-[oklch(0.95_0.03_85/0.14)] data-pressed:text-[oklch(0.97_0.02_85)]"
+            className="h-11 min-w-11 px-2 text-sm sm:px-2.5 text-foreground/80 data-pressed:bg-foreground/10 data-pressed:text-foreground"
           >
             {e}
           </ToggleGroupItem>
@@ -104,6 +105,10 @@ function YearInput({ epoch, onEpoch }: { epoch: number; onEpoch: (y: number) => 
   );
 }
 
+/**
+ * Year, date and solar time for the sky: the expanded info panel's side column, or a
+ * card on its own toggle otherwise.
+ */
 export function SkyConsole(props: Props) {
   const { epoch, dayOfYear, solarHour, latDeg, lonDeg, sunAltDeg } = props;
 
@@ -133,18 +138,11 @@ export function SkyConsole(props: Props) {
   );
   const maxDay = daysInYear(epoch);
 
-  // On phones the year slider, day and seasons fold away so the scene stays visible.
-  const [expanded, setExpanded] = useState(false);
-
   const nudge = (delta: number) =>
     props.onEpoch(Math.min(EPOCH_MAX, Math.max(EPOCH_MIN, epoch + delta)));
 
   return (
-    <section
-      aria-label="Sky date and time"
-      data-theme="egypt"
-      className="dark pointer-events-auto w-full rounded-2xl border border-white/10 bg-[oklch(0.16_0.012_60/0.78)] p-4 text-[oklch(0.9_0.02_85)] shadow-[0_20px_60px_-20px_rgb(0_0_0/0.7)] backdrop-blur-md sm:w-104 sm:p-5"
-    >
+    <section aria-label="Sky date and time" className={cn('text-foreground', props.className)}>
       {/* Below about 340 px the nudge buttons wrap under the year instead of overflowing. */}
       <div className="flex flex-wrap items-end justify-between gap-2">
         <YearInput epoch={epoch} onEpoch={props.onEpoch} />
@@ -152,7 +150,7 @@ export function SkyConsole(props: Props) {
           <button
             type="button"
             onClick={() => nudge(-100)}
-            className="flex size-11 items-center justify-center rounded-lg text-sm text-[oklch(0.8_0.03_85)] hover:bg-white/10 focus-visible:ring-2 focus-visible:ring-[oklch(0.8_0.12_85)] focus-visible:outline-none"
+            className="flex size-11 items-center justify-center rounded-lg text-sm text-foreground/80 hover:bg-foreground/10 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
             aria-label="100 years earlier"
           >
             <Minus className="size-4" aria-hidden />
@@ -163,7 +161,7 @@ export function SkyConsole(props: Props) {
           <button
             type="button"
             onClick={() => nudge(100)}
-            className="flex size-11 items-center justify-center rounded-lg text-sm text-[oklch(0.8_0.03_85)] hover:bg-white/10 focus-visible:ring-2 focus-visible:ring-[oklch(0.8_0.12_85)] focus-visible:outline-none"
+            className="flex size-11 items-center justify-center rounded-lg text-sm text-foreground/80 hover:bg-foreground/10 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
             aria-label="100 years later"
           >
             <Plus className="size-4" aria-hidden />
@@ -174,24 +172,7 @@ export function SkyConsole(props: Props) {
         </div>
       </div>
 
-      <button
-        type="button"
-        aria-expanded={expanded}
-        aria-controls="sky-console-more"
-        onClick={() => setExpanded((v) => !v)}
-        className="mt-2 flex min-h-11 w-full items-center justify-between rounded-lg px-1 text-sm text-[oklch(0.82_0.03_85)] focus-visible:ring-2 focus-visible:ring-[oklch(0.8_0.12_85)] focus-visible:outline-none sm:hidden"
-      >
-        <span>
-          <span className="font-heading text-lg">{formatDayOfYear(epoch, dayOfYear)}</span>
-          <span className="text-[oklch(0.68_0.03_80)]"> {expanded ? 'Hide' : 'Change'} date</span>
-        </span>
-        <ChevronDown
-          className={cn('size-4 transition-transform', expanded && 'rotate-180')}
-          aria-hidden
-        />
-      </button>
-
-      <div id="sky-console-more" className={cn(!expanded && 'hidden', 'sm:block')}>
+      <div>
         <Slider
           className="mt-4"
           aria-label="Year"
@@ -201,16 +182,14 @@ export function SkyConsole(props: Props) {
           value={[epoch]}
           onValueChange={(v) => props.onEpoch(Array.isArray(v) ? v[0] : v)}
         />
-        <div className="mt-1.5 flex justify-between text-xs text-[oklch(0.68_0.03_80)] tabular-nums">
+        <div className="mt-1.5 flex justify-between text-xs text-muted-foreground tabular-nums">
           <span>{formatYear(EPOCH_MIN)}</span>
           <span>{formatYear(EPOCH_MAX)}</span>
         </div>
 
         <div className="mt-5 flex items-baseline justify-between gap-3">
-          <p className="hidden font-heading text-xl sm:block">
-            {formatDayOfYear(epoch, dayOfYear)}
-          </p>
-          <label className="flex items-center gap-2 text-xs text-[oklch(0.68_0.03_80)]">
+          <p className="font-heading text-xl">{formatDayOfYear(epoch, dayOfYear)}</p>
+          <label className="flex items-center gap-2 text-xs text-muted-foreground">
             Day
             <input
               type="number"
@@ -221,11 +200,11 @@ export function SkyConsole(props: Props) {
                 const d = Number(e.target.value);
                 if (Number.isInteger(d) && d >= 1 && d <= maxDay) props.onSkyTime({ dayOfYear: d });
               }}
-              className="h-9 w-16 rounded-md border border-white/15 bg-transparent px-2 text-sm text-[oklch(0.92_0.02_85)] tabular-nums focus-visible:ring-2 focus-visible:ring-[oklch(0.8_0.12_85)] focus-visible:outline-none"
+              className="h-9 w-16 rounded-md border border-foreground/15 bg-transparent px-2 text-sm text-foreground tabular-nums focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
             />
           </label>
         </div>
-        <div className="mt-2 grid grid-cols-2 gap-1.5 sm:grid-cols-4">
+        <div className="mt-2 grid grid-cols-2 gap-1.5">
           {(Object.keys(SEASON_EVENTS) as SeasonEvent[]).map((e) => (
             <button
               key={e}
@@ -233,8 +212,8 @@ export function SkyConsole(props: Props) {
               aria-pressed={activeSeason === e}
               onClick={() => props.onSkyTime({ dayOfYear: seasonDays[e] })}
               className={cn(
-                'min-h-11 rounded-lg border border-white/10 px-2 text-xs/tight text-[oklch(0.82_0.03_85)] hover:bg-white/10 focus-visible:ring-2 focus-visible:ring-[oklch(0.8_0.12_85)] focus-visible:outline-none',
-                'aria-pressed:border-[oklch(0.8_0.12_85/0.6)] aria-pressed:bg-[oklch(0.8_0.12_85/0.14)] aria-pressed:text-[oklch(0.97_0.02_85)]'
+                'min-h-11 rounded-lg border border-foreground/10 px-2 text-xs/tight text-foreground/80 hover:bg-foreground/10 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none',
+                'aria-pressed:border-primary/60 aria-pressed:bg-primary/15 aria-pressed:text-foreground'
               )}
             >
               {SEASON_EVENTS[e].label}
@@ -243,13 +222,13 @@ export function SkyConsole(props: Props) {
         </div>
       </div>
 
-      <div className="mt-3 flex items-baseline justify-between sm:mt-5">
+      <div className="mt-5 flex items-baseline justify-between">
         <p className="text-sm">
           <span className="font-heading text-xl tabular-nums">{formatHour(solarHour)}</span>{' '}
-          <span className="text-[oklch(0.68_0.03_80)]">solar time</span>
+          <span className="text-muted-foreground">solar time</span>
         </p>
         {sunAltDeg !== null ? (
-          <p className="text-xs text-[oklch(0.68_0.03_80)] tabular-nums">
+          <p className="text-xs text-muted-foreground tabular-nums">
             Sun{' '}
             {sunAltDeg >= 0 ? `${sunAltDeg.toFixed(0)}° up` : `${(-sunAltDeg).toFixed(0)}° down`}
           </p>
@@ -268,14 +247,47 @@ export function SkyConsole(props: Props) {
           step={0.25}
           value={[solarHour]}
           onValueChange={(v) => props.onSkyTime({ solarHour: Array.isArray(v) ? v[0] : v })}
-          className="relative **:data-[slot=slider-range]:bg-transparent **:data-[slot=slider-thumb]:size-5 **:data-[slot=slider-thumb]:border-2 **:data-[slot=slider-thumb]:border-[oklch(0.16_0.012_60)] **:data-[slot=slider-track]:h-3 **:data-[slot=slider-track]:bg-transparent"
+          className="relative **:data-[slot=slider-range]:bg-transparent **:data-[slot=slider-thumb]:size-5 **:data-[slot=slider-thumb]:border-2 **:data-[slot=slider-thumb]:border-background **:data-[slot=slider-track]:h-3 **:data-[slot=slider-track]:bg-transparent"
         />
       </div>
-      <div className="mt-1.5 flex justify-between text-xs text-[oklch(0.68_0.03_80)] tabular-nums">
+      <div className="mt-1.5 flex justify-between text-xs text-muted-foreground tabular-nums">
         <span>00:00</span>
         <span>Noon</span>
         <span>24:00</span>
       </div>
     </section>
+  );
+}
+
+/** Shows or hides the floating date and time card. Sits under the info panel's button. */
+export function SkyTimeButton({
+  open,
+  onToggle,
+  controls,
+  className,
+}: {
+  open: boolean;
+  onToggle: () => void;
+  /** Id of the card it shows. */
+  controls: string;
+  className?: string;
+}) {
+  const label = open ? 'Hide the date and time' : 'Show the date and time';
+  return (
+    <button
+      type="button"
+      onClick={onToggle}
+      aria-expanded={open}
+      aria-controls={controls}
+      aria-label={label}
+      title={label}
+      className={cn(
+        'pointer-events-auto flex size-11 shrink-0 items-center justify-center rounded-full border border-foreground/15 bg-background/75 text-foreground shadow-lg backdrop-blur-md transition-colors hover:bg-background/90 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none',
+        'aria-expanded:border-primary/70 aria-expanded:bg-selected',
+        className
+      )}
+    >
+      <CalendarClock aria-hidden className="size-5" />
+    </button>
   );
 }

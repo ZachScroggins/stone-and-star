@@ -15,13 +15,13 @@ export const Slug = z.string().regex(/^[a-z0-9]+(?:-[a-z0-9]+)*$/, 'Expected a k
  * Every record says whether it has been checked against a source. Placeholder data
  * is `unverified: true` and needs no evidence; a verified record must cite evidence.
  */
-const Provenance = z.object({
+export const Provenance = z.object({
   unverified: z.boolean(),
   evidenceIds: z.array(Slug).default([]),
   note: z.string().optional(),
 });
 
-function requireEvidenceWhenVerified<T extends z.infer<typeof Provenance>>(
+export function requireEvidenceWhenVerified<T extends z.infer<typeof Provenance>>(
   value: T,
   ctx: z.core.$RefinementCtx<T>
 ) {

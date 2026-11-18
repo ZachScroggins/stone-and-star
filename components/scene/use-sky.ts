@@ -112,5 +112,10 @@ export function useSky(input: SkyInput) {
   }, [catalog, year, dayOfYear, solarHour, latDeg, lonDeg]);
 
   const attributes = useMemo(() => (catalog ? starAttributes(catalog) : null), [catalog]);
-  return { result, attributes, error };
+  // Catalog rows by HIP number, for computations that need one star (alignments).
+  const rows = useMemo(
+    () => (catalog ? new Map(catalog.stars.map((r) => [r[0], r] as const)) : null),
+    [catalog]
+  );
+  return { result, attributes, rows, error };
 }

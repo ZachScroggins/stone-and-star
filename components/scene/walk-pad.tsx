@@ -56,7 +56,7 @@ function HoldButton({
       onKeyDown={onKey(true)}
       onKeyUp={onKey(false)}
       onContextMenu={(e) => e.preventDefault()}
-      className="flex size-11 touch-none items-center justify-center rounded-full border border-white/15 bg-[oklch(0.16_0.012_60/0.7)] text-[oklch(0.9_0.02_85)] backdrop-blur-md transition-colors select-none hover:bg-[oklch(0.22_0.012_60/0.85)] focus-visible:ring-2 focus-visible:ring-[oklch(0.8_0.12_85)] focus-visible:outline-none active:bg-[oklch(0.8_0.12_85/0.3)]"
+      className="flex size-11 touch-none items-center justify-center rounded-full border border-foreground/15 bg-background/75 text-foreground backdrop-blur-md transition-colors select-none hover:bg-muted/90 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none active:bg-primary/30"
     >
       {children}
     </button>
@@ -64,7 +64,7 @@ function HoldButton({
 }
 
 const roundButton =
-  'flex size-11 items-center justify-center rounded-full border border-white/15 bg-[oklch(0.16_0.012_60/0.7)] backdrop-blur-md transition-colors hover:bg-[oklch(0.22_0.012_60/0.85)] focus-visible:ring-2 focus-visible:ring-[oklch(0.8_0.12_85)] focus-visible:outline-none';
+  'flex size-11 items-center justify-center rounded-full border border-foreground/15 bg-background/75 backdrop-blur-md transition-colors hover:bg-muted/90 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none';
 
 /** Whether the readout and tips are shown; remembered per browser. */
 const INFO_KEY = 'stone-and-star:walk-info';
@@ -92,28 +92,73 @@ export interface SightReadout {
   elevationDeg: number;
 }
 
-/** Sky-view movement: a hold-to-walk pad, a reset, and where the viewer stands. */
+/** The readout-and-tips preference, shared by the pad button and both places the box shows. */
+export function useWalkInfo() {
+  // The explorer renders only in the browser, so reading storage here is safe.
+  const [show, setShow] = useState(readInfoPref);
+  const id = useId();
+  const toggle = () => {
+    setShow(!show);
+    writeInfoPref(!show);
+  };
+  return { show, toggle, id };
+}
+
+/** Where the viewer stands relative to the Great Pyramid, and how to move. */
+export function WalkInfo({
+  sight,
+  id,
+  className,
+}: {
+  sight: SightReadout | null;
+  id?: string;
+  className?: string;
+}) {
+  return (
+    <div
+      id={id}
+      className={cn(
+        'pointer-events-auto max-w-80 rounded-xl border border-foreground/10 bg-background/75 px-3 py-2 text-right text-xs/relaxed text-foreground backdrop-blur-md',
+        className
+      )}
+    >
+      {sight ? (
+        <p className="tabular-nums">
+          {sight.name}: {Math.round(sight.distance)} m, bearing {Math.round(sight.bearingDeg)}°,
+          apex {sight.elevationDeg.toFixed(1)}° up
+        </p>
+      ) : null}
+      <p className="text-muted-foreground pointer-coarse:hidden">
+        Drag to look · WASD or arrows to walk · scroll to step · Shift to run
+      </p>
+      <p className="hidden text-muted-foreground pointer-coarse:block">
+        Drag to look · pinch to step
+      </p>
+    </div>
+  );
+}
+
+/**
+ * Sky-view movement: a hold-to-walk pad, a reset and the readout toggle. On phones the
+ * readout sits under the pad; wider screens show it at the top right (see the explorer).
+ */
 export function WalkPad({
   sight,
   moved,
   onReset,
+  info,
   className,
 }: {
   sight: SightReadout | null;
   /** True once the viewer has left the default standpoint. */
   moved: boolean;
   onReset: () => void;
+  info: ReturnType<typeof useWalkInfo>;
   className?: string;
 }) {
-  // The explorer renders only in the browser, so reading storage here is safe.
-  const [showInfo, setShowInfo] = useState(readInfoPref);
-  const infoId = useId();
   return (
     <div
-      className={cn(
-        'pointer-events-none flex flex-col items-end gap-2 text-[oklch(0.9_0.02_85)]',
-        className
-      )}
+      className={cn('pointer-events-none flex flex-col items-end gap-2 text-foreground', className)}
     >
       <div role="group" aria-label="Walk" className="pointer-events-auto grid grid-cols-3 gap-1.5">
         <HoldButton move="left" label="Turn left">
@@ -140,40 +185,17 @@ export function WalkPad({
         </HoldButton>
         <button
           type="button"
-          aria-pressed={showInfo}
-          aria-controls={infoId}
+          aria-pressed={info.show}
+          aria-controls={`${info.id} ${info.id}-wide`}
           aria-label="Distance readout and tips"
-          title={showInfo ? 'Hide the readout and tips' : 'Show the readout and tips'}
-          onClick={() => {
-            setShowInfo(!showInfo);
-            writeInfoPref(!showInfo);
-          }}
-          className={cn(
-            roundButton,
-            'aria-pressed:border-[oklch(0.8_0.12_85/0.7)] aria-pressed:bg-[oklch(0.8_0.12_85/0.22)]'
-          )}
+          title={info.show ? 'Hide the readout and tips' : 'Show the readout and tips'}
+          onClick={info.toggle}
+          className={cn(roundButton, 'aria-pressed:border-primary/70 aria-pressed:bg-selected')}
         >
           <Info aria-hidden className="size-4" />
         </button>
       </div>
-      <div
-        id={infoId}
-        hidden={!showInfo}
-        className="pointer-events-auto max-w-80 rounded-xl border border-white/10 bg-[oklch(0.16_0.012_60/0.7)] px-3 py-2 text-right text-xs/relaxed backdrop-blur-md"
-      >
-        {sight ? (
-          <p className="tabular-nums">
-            {sight.name}: {Math.round(sight.distance)} m, bearing {Math.round(sight.bearingDeg)}°,
-            apex {sight.elevationDeg.toFixed(1)}° up
-          </p>
-        ) : null}
-        <p className="text-[oklch(0.72_0.03_80)] pointer-coarse:hidden">
-          Drag to look · WASD or arrows to walk · scroll to step · Shift to run
-        </p>
-        <p className="hidden text-[oklch(0.72_0.03_80)] pointer-coarse:block">
-          Drag to look · pinch to step
-        </p>
-      </div>
+      {info.show ? <WalkInfo sight={sight} id={info.id} className="sm:hidden" /> : null}
     </div>
   );
 }

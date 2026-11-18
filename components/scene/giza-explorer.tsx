@@ -1,23 +1,31 @@
 'use client';
 
 import dynamic from 'next/dynamic';
-import { useCallback, useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useId, useMemo, useState } from 'react';
 
+import { ChatBar } from '@/components/panel/chat-bar';
+import { FactsTab } from '@/components/panel/facts-tab';
+import { InfoPanel, InfoPanelButton } from '@/components/panel/info-panel';
+import { SkyTab, type ShowInSky } from '@/components/panel/sky-tab';
+import { TimelineTab } from '@/components/panel/timeline-tab';
+import { ViewsTab } from '@/components/panel/views-tab';
 import { SKY_FIGURES_URL, SkyFiguresV1 } from '@/lib/astro/constellations';
 import type { Anchor, Measurement } from '@/lib/contracts/site';
+import type { PanelData } from '@/lib/data/panel';
 import { fromLocal, toLocal } from '@/lib/geo/local';
 import { modelManifestUrl, ModelManifestV1 } from '@/lib/models/manifest';
 import { useSceneStore } from '@/lib/scene/store';
 import { decodeHeights, GIZA_TERRAIN_URL, heightAt, TerrainV1 } from '@/lib/scene/terrain';
 import { sceneFromSearchParams, sceneToSearchParams } from '@/lib/scene/url';
 import { sightTo, type WalkPose, type WalkWorld } from '@/lib/scene/walk';
+import { cn } from '@/lib/utils';
 
 import { LayerBar } from './layer-bar';
 import type { AnchorMarker, DimensionSpec } from './overlays';
-import { SkyConsole } from './sky-console';
+import { SkyConsole, SkyTimeButton } from './sky-console';
 import type { PlacedModel } from './structures';
 import { useSky } from './use-sky';
-import { WalkPad, type SightReadout } from './walk-pad';
+import { useWalkInfo, WalkInfo, WalkPad, type SightReadout } from './walk-pad';
 
 const SceneCanvas = dynamic(() => import('./scene-canvas'), { ssr: false });
 
@@ -29,7 +37,11 @@ export interface GizaExplorerProps {
   lon: number;
   anchors: Anchor[];
   measurements: Measurement[];
+  /** Everything the info panel shows. */
+  panel: PanelData;
 }
+
+const isPhone = () => window.matchMedia('(max-width: 639px)').matches;
 
 function useJson<T>(url: string, parse: (v: unknown) => T) {
   const [data, setData] = useState<T | null>(null);
@@ -216,6 +228,89 @@ export default function GizaExplorer(props: GizaExplorerProps) {
     [dispatch]
   );
 
+  const panel = state.panel;
+  const panelOpen = panel.size !== 'icon';
+  const [chatDraft, setChatDraft] = useState('');
+  const walkInfo = useWalkInfo();
+  // The date and time: a column in the expanded panel, otherwise a card on a toggle.
+  const [timeOpen, setTimeOpen] = useState(false);
+  const timeCardId = useId();
+  const skyConsole = (
+    <SkyConsole
+      epoch={state.epoch}
+      dayOfYear={state.sky.dayOfYear}
+      solarHour={state.sky.solarHour}
+      latDeg={props.lat}
+      lonDeg={props.lon}
+      sunAltDeg={sky.result ? sky.result.sun.alt / DEG : null}
+      onEpoch={(year) => dispatch({ type: 'setEpoch', year })}
+      onSkyTime={(t) => dispatch({ type: 'setSkyTime', ...t })}
+    />
+  );
+  const timeButton = (className?: string) => (
+    <SkyTimeButton
+      open={timeOpen}
+      onToggle={() => setTimeOpen((v) => !v)}
+      controls={timeCardId}
+      className={className}
+    />
+  );
+
+  // After acting on the scene from the panel, make room to see it: phones close the
+  // sheet, the expanded panel narrows.
+  const revealScene = useCallback(() => {
+    if (panel.size === 'icon') return;
+    const size = isPhone() ? 'icon' : 'phone';
+    if (size !== panel.size) dispatch({ type: 'openPanel', tab: panel.tab, size });
+  }, [dispatch, panel]);
+
+  const onFocusStructure = useCallback(
+    (structureSlug: string) => {
+      const anchor = props.anchors.find(
+        (a) => a.structureSlug === structureSlug && a.kind === 'structure-center'
+      );
+      if (!anchor) return;
+      onFocus(anchor.slug);
+      revealScene();
+    },
+    [props.anchors, onFocus, revealScene]
+  );
+
+  const onShowInSky = useCallback(
+    (v: ShowInSky) => {
+      dispatch({ type: 'setEpoch', year: v.year });
+      dispatch({ type: 'setSkyTime', dayOfYear: v.dayOfYear, solarHour: v.solarHour });
+      if (placed) {
+        const { lat, lon } = fromLocal(placed.terrain.origin, standpoint.x, standpoint.z);
+        dispatch({
+          type: 'setStandpoint',
+          standpoint: { lat, lon, heading: v.headingDeg, pitch: v.pitchDeg },
+        });
+      }
+      dispatch({ type: 'setView', view: 'sky' });
+      revealScene();
+    },
+    [dispatch, placed, standpoint, revealScene]
+  );
+
+  const onAsk = useCallback(
+    (text: string) => {
+      setChatDraft(text);
+      revealScene();
+      requestAnimationFrame(() => document.getElementById('scene-chat')?.focus());
+    },
+    [revealScene]
+  );
+
+  // Suggestions come from the site's own questions and alignments.
+  const suggestions = useMemo(
+    () => [
+      ...props.panel.questions.map((q) => q.title),
+      ...props.panel.alignments.map((a) => `Does the ${a.axisLabel} point at ${a.targetName}?`),
+    ],
+    [props.panel]
+  );
+
   const loadError = terrain.error ?? manifest.error ?? sky.error;
   const hasSurviving = manifest.data?.models.some((m) => m.condition === 'surviving') ?? false;
 
@@ -248,37 +343,159 @@ export default function GizaExplorer(props: GizaExplorerProps) {
         </p>
       )}
 
-      <div className="pointer-events-none absolute inset-x-0 top-20 z-10 px-4 sm:top-18 sm:px-6">
-        <LayerBar
-          state={state}
-          hasSurviving={hasSurviving}
-          onLayer={(layer, on) => dispatch({ type: 'setLayer', layer, on })}
-          onCondition={(condition) => dispatch({ type: 'setModelCondition', condition })}
-          onView={(view) => dispatch({ type: 'setView', view })}
-        />
-      </div>
-
-      {/* Phones: walk pad and readout stacked above the sky console.
-          Wider screens: console bottom-left, walk pad bottom-right. */}
-      <div className="pointer-events-none absolute inset-x-0 bottom-0 z-10 flex flex-col gap-2 p-3 sm:inset-x-4 sm:bottom-4 sm:flex-row sm:items-end sm:justify-between sm:p-0">
-        {state.view === 'sky' && placed ? (
-          <WalkPad
-            sight={sight}
-            moved={state.standpoint !== null}
-            onReset={() => dispatch({ type: 'setStandpoint', standpoint: null })}
-            className="self-end sm:order-last"
+      {/* Controls and panels follow the site theme (light or dark) from the route layout. */}
+      <div className="contents">
+        {/* Top row: view and layer controls, centred, with the info panel's open button
+            at the end. Wider screens keep an equal column on the left so the controls
+            centre on the scene. An open panel takes the right side (wider screens) or
+            covers the row (phones), and the button goes. */}
+        <div
+          className={cn(
+            'pointer-events-none absolute inset-x-0 top-20 z-10 grid items-start gap-2 px-4 sm:inset-x-4 sm:top-18 sm:gap-3 sm:px-0',
+            panelOpen
+              ? 'grid-cols-1'
+              : 'grid-cols-[minmax(0,1fr)_auto] sm:grid-cols-[2.75rem_minmax(0,1fr)_2.75rem]',
+            panel.size === 'phone' && 'sm:right-104'
+          )}
+        >
+          <LayerBar
+            state={state}
+            hasSurviving={hasSurviving}
+            onLayer={(layer, on) => dispatch({ type: 'setLayer', layer, on })}
+            onCondition={(condition) => dispatch({ type: 'setModelCondition', condition })}
+            onView={(view) => dispatch({ type: 'setView', view })}
+            className={cn('row-start-1', !panelOpen && 'sm:col-start-2')}
           />
+          {panelOpen ? null : (
+            <InfoPanelButton
+              data={props.panel}
+              tab={panel.tab}
+              onPanel={(tab, size) => dispatch({ type: 'openPanel', tab, size })}
+              className="col-start-2 row-start-1 sm:col-start-3"
+            />
+          )}
+        </div>
+
+        {/* The open panel starts at the top row and covers it on phones (and when
+            expanded); the chat bar floats over its bottom edge. */}
+        <div
+          className={cn(
+            'pointer-events-none absolute z-20',
+            !panelOpen && 'hidden',
+            panel.size === 'phone' &&
+              'inset-x-0 top-20 bottom-0 sm:inset-x-auto sm:top-18 sm:right-4 sm:bottom-4 sm:w-[24rem]',
+            panel.size === 'full' && 'inset-x-0 top-20 bottom-0 sm:inset-x-4 sm:top-18 sm:bottom-4'
+          )}
+        >
+          <InfoPanel
+            data={props.panel}
+            tab={panel.tab}
+            size={panel.size}
+            onPanel={(tab, size) => dispatch({ type: 'openPanel', tab, size })}
+            renderTime={() => skyConsole}
+            // Phones: the sheet covers the top right, so the time toggle joins its header.
+            headerActions={panel.size === 'phone' ? timeButton('sm:hidden') : null}
+            renderTab={(tab, wide) => {
+              switch (tab) {
+                case 'facts':
+                  return (
+                    <FactsTab
+                      structures={props.panel.structures}
+                      measurements={props.panel.measurements}
+                      references={props.panel.references}
+                      onFocusStructure={onFocusStructure}
+                    />
+                  );
+                case 'sky':
+                  return (
+                    <SkyTab
+                      alignments={props.panel.alignments}
+                      claims={props.panel.claims}
+                      stars={sky.rows}
+                      latDeg={props.lat}
+                      lonDeg={props.lon}
+                      onShow={onShowInSky}
+                    />
+                  );
+                case 'timeline':
+                  return (
+                    <TimelineTab events={props.panel.timeline} sources={props.panel.sources} />
+                  );
+                case 'views':
+                  return (
+                    <ViewsTab
+                      questions={props.panel.questions}
+                      claims={props.panel.claims}
+                      proponents={props.panel.proponents}
+                      sources={props.panel.sources}
+                      wide={wide}
+                      onAsk={onAsk}
+                    />
+                  );
+              }
+            }}
+          />
+        </div>
+
+        {/* Right-hand stack under the top row (left of an open panel): the date and time
+            toggle under the info panel's button, its card, then (wider screens) the walk
+            readout. Phones show the readout under the walk pad. The expanded panel has
+            the date and time in its own column instead. */}
+        {panel.size !== 'full' ? (
+          <div
+            className={cn(
+              'pointer-events-none absolute inset-x-4 top-34 z-20 flex flex-col items-end gap-2 sm:inset-x-auto sm:top-32',
+              panel.size === 'phone' ? 'sm:right-104' : 'sm:right-4'
+            )}
+          >
+            {timeButton(panel.size === 'phone' ? 'max-sm:hidden' : undefined)}
+            {timeOpen ? (
+              <div
+                id={timeCardId}
+                className="pointer-events-auto max-h-[calc(100svh-18rem)] w-full overflow-y-auto overscroll-contain rounded-2xl border border-foreground/10 bg-background/85 p-4 shadow-[0_20px_60px_-20px_rgb(0_0_0/0.7)] backdrop-blur-md sm:w-96 sm:p-5"
+              >
+                {skyConsole}
+              </div>
+            ) : null}
+            {state.view === 'sky' && placed && walkInfo.show ? (
+              <WalkInfo sight={sight} id={`${walkInfo.id}-wide`} className="max-sm:hidden" />
+            ) : null}
+          </div>
         ) : null}
-        <SkyConsole
-          epoch={state.epoch}
-          dayOfYear={state.sky.dayOfYear}
-          solarHour={state.sky.solarHour}
-          latDeg={props.lat}
-          lonDeg={props.lon}
-          sunAltDeg={sky.result ? sky.result.sun.alt / DEG : null}
-          onEpoch={(year) => dispatch({ type: 'setEpoch', year })}
-          onSkyTime={(t) => dispatch({ type: 'setSkyTime', ...t })}
-        />
+
+        {/* Bottom controls: the walk pad and the chat bar. Phones stack them; wider screens put them in one
+            row. An open panel takes the right side; expanded, it covers the walk pad
+            and the chat bar moves over its reading column. */}
+        <div
+          className={cn(
+            'pointer-events-none absolute inset-x-0 bottom-0 z-30 p-3 sm:inset-x-4 sm:bottom-4 sm:p-0',
+            panel.size === 'phone' && 'sm:right-104',
+            panel.size === 'full' && 'sm:left-104'
+          )}
+        >
+          <div className="grid gap-2 [grid-template-areas:'pad'_'chat'] sm:grid-cols-[minmax(0,1fr)_auto] sm:items-end sm:gap-3 sm:[grid-template-areas:'chat_pad']">
+            {state.view === 'sky' && placed ? (
+              <WalkPad
+                sight={sight}
+                moved={state.standpoint !== null}
+                onReset={() => dispatch({ type: 'setStandpoint', standpoint: null })}
+                info={walkInfo}
+                className={cn(
+                  'justify-self-end [grid-area:pad]',
+                  panelOpen && 'max-sm:hidden',
+                  panel.size === 'full' && 'hidden'
+                )}
+              />
+            ) : null}
+            <ChatBar
+              suggestions={suggestions}
+              draft={chatDraft}
+              onDraft={setChatDraft}
+              quiet={panel.size === 'full'}
+              className="mx-auto max-w-xl [grid-area:chat]"
+            />
+          </div>
+        </div>
       </div>
     </div>
   );

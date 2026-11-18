@@ -55,6 +55,8 @@ To ask the guide, paste your own Anthropic API key into the Giza page. The key s
 | `npm test`          | Run the Vitest suite once                                           |
 | `npm run format`    | Format with Prettier                                                |
 
+In development, prefer `npm run dev:local` so guide requests run on the owner's Claude Code login instead of the API key. Use the API path only to test it specifically (custom tools, visitor keys, evals).
+
 ## How accurate is the sky?
 
 The sky is computed in the browser (a Web Worker) from the Hipparcos catalogue: proper motion to the chosen year, the Vondrák et al. (2011) long-term precession model (ported from ERFA and checked against ERFA's reference values), conversion to the local horizon, and atmospheric refraction. The Sun and Moon come from [astronomy-engine](https://github.com/cosinekitty/astronomy).
