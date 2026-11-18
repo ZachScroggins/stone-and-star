@@ -12,6 +12,7 @@ import type { SceneState } from './state';
 //   ?v=1&year=-2559&day=172&hour=21.5&layers=labels,skyDome&focus=great-pyramid-center&model=as_built&view=sky
 //   &at=29.976012,31.137021&look=315,25   (standpoint: lat,lon and heading,pitch in degrees)
 //   &panel=views.phone                     (info panel tab and size; omitted when it is the default)
+//   &explorer=1&pattern=height-times-43200-polar-radius   (coincidence explorer, M4)
 // Unknown or invalid parameters fall back to the current state's values.
 
 const round = (x: number, digits: number) => Number(x.toFixed(digits));
@@ -53,6 +54,10 @@ export function sceneToSearchParams(state: SceneState): URLSearchParams {
   if (state.panel.tab !== 'facts' || state.panel.size !== 'icon') {
     p.set('panel', `${state.panel.tab}.${state.panel.size}`);
   }
+  if (state.explorer) {
+    p.set('explorer', '1');
+    if (state.explorer.pattern) p.set('pattern', state.explorer.pattern);
+  }
   if (state.standpoint) {
     const { lat, lon, heading, pitch } = state.standpoint;
     p.set('at', `${round(lat, 6)},${round(lon, 6)}`);
@@ -93,6 +98,7 @@ export function sceneFromSearchParams(params: URLSearchParams, fallback: SceneSt
       : 'overview',
     standpoint: standpointFrom(params, fallback.standpoint),
     panel: panelFrom(params.get('panel'), fallback.panel),
+    explorer: params.get('explorer') === '1' ? { pattern: params.get('pattern') } : null,
   };
   const parsed = SceneStateV1.safeParse(candidate);
   if (!parsed.success) return fallback;

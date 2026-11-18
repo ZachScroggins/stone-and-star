@@ -26,6 +26,17 @@ describe('reduceScene', () => {
     expect(s.standpoint).toBeNull();
   });
 
+  it('opens the coincidence explorer in the expanded Facts tab, and closes it', () => {
+    let s = reduceScene(base, { type: 'openExplorer', pattern: 'height-times-43200-polar-radius' });
+    expect(s.explorer).toEqual({ pattern: 'height-times-43200-polar-radius' });
+    expect(s.panel).toEqual({ tab: 'facts', size: 'full' });
+    s = reduceScene(s, { type: 'openExplorer' });
+    expect(s.explorer).toEqual({ pattern: null });
+    s = reduceScene(s, { type: 'closeExplorer' });
+    expect(s.explorer).toBeNull();
+    expect(s.panel).toEqual({ tab: 'facts', size: 'full' });
+  });
+
   it('does not mutate the previous state', () => {
     reduceScene(base, { type: 'setLayer', layer: 'dimensions', on: true });
     expect(base.layers.dimensions).toBe(false);
@@ -50,6 +61,17 @@ describe('scene URL state', () => {
     expect(params.get('look')).toBe('297.5,18.2');
     expect(params.get('panel')).toBe('views.phone');
     expect(sceneFromSearchParams(params, base)).toEqual(s);
+  });
+
+  it('round-trips the coincidence explorer', () => {
+    for (const explorer of [{ pattern: 'height-times-43200-polar-radius' }, { pattern: null }]) {
+      const s = { ...base, explorer, panel: { tab: 'facts' as const, size: 'full' as const } };
+      const params = sceneToSearchParams(s);
+      expect(params.get('explorer')).toBe('1');
+      expect(sceneFromSearchParams(params, base)).toEqual(s);
+    }
+    expect(sceneToSearchParams(base).has('explorer')).toBe(false);
+    expect(sceneFromSearchParams(new URLSearchParams('v=1'), base).explorer).toBeNull();
   });
 
   it('reads links from before the standpoint and constellations were added', () => {

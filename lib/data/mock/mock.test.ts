@@ -57,8 +57,27 @@ describe('panel data', () => {
     expect(panel.proponents.map((p) => p.slug)).toContain('robert-schoch');
     expect(panel.sources.map((s) => s.slug)).toContain('schoch-forgotten-civilization');
     // Placeholders stay flagged.
-    for (const list of [panel.claims, panel.questions, panel.timeline, panel.alignments]) {
+    for (const list of [
+      panel.claims,
+      panel.questions,
+      panel.timeline,
+      panel.alignments,
+      panel.patterns,
+    ]) {
       for (const r of list) expect(r.unverified).toBe(true);
+    }
+  });
+
+  it('gives every numerical pattern a value the explorer can test', async () => {
+    const { getPanelData } = await import('../panel');
+    const { lengthsFrom, testPattern } = await import('@/lib/facts/coincidence');
+    const panel = await getPanelData(mockSiteData, 'giza');
+    expect(panel.patterns.length).toBeGreaterThan(0);
+    const lengths = lengthsFrom(panel.measurements);
+    for (const p of panel.patterns) {
+      expect(testPattern(p, lengths, panel.references), p.slug).not.toBeNull();
+      const claim = panel.claims.find((c) => c.slug === p.claimSlug);
+      expect(claim?.basis, p.slug).toBe('numerical_pattern');
     }
   });
 

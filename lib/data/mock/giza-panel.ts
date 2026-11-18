@@ -2,6 +2,7 @@ import type { z } from 'zod';
 
 import type { AlignmentHypothesis, ReferenceQuantity } from '@/lib/contracts/alignment';
 import type { Claim, Proponent, Question, Source } from '@/lib/contracts/claims';
+import type { NumericalPattern } from '@/lib/contracts/coincidence';
 import type { TimelineEvent } from '@/lib/contracts/timeline';
 import { fromBce } from '@/lib/years';
 
@@ -221,6 +222,14 @@ export const gizaClaims: z.input<typeof Claim>[] = (
       sourceSlugs: ['jre-2374-van-kerkwyk'],
     },
     {
+      slug: 'great-pyramid-height-encodes-polar-radius',
+      structureSlug: 'great-pyramid',
+      statement: 'The Great Pyramid’s height multiplied by 43,200 gives Earth’s polar radius.',
+      reception: 'minority',
+      basis: 'numerical_pattern',
+      proponentSlugs: ['ben-van-kerkwyk'],
+    },
+    {
       slug: 'kings-chamber-south-shaft-orion',
       structureSlug: 'great-pyramid',
       statement:
@@ -370,3 +379,22 @@ export const referenceQuantities: z.input<typeof ReferenceQuantity>[] = (
     },
   ] satisfies Draft<typeof ReferenceQuantity>[]
 ).map((r) => ({ ...r, unverified: true, note: WGS84 }));
+
+/** Numerical-pattern claims in testable form, for the coincidence explorer (M4). */
+export const gizaPatterns: z.input<typeof NumericalPattern>[] = (
+  [
+    {
+      slug: 'height-times-43200-polar-radius',
+      claimSlug: 'great-pyramid-height-encodes-polar-radius',
+      title: 'Height × 43,200 = Earth’s polar radius',
+      numerator: { kind: 'reference', slug: 'earth-polar-radius' },
+      denominator: {
+        kind: 'length',
+        structureSlug: 'great-pyramid',
+        length: 'height',
+        condition: 'as_built',
+      },
+      target: 43_200,
+    },
+  ] satisfies Draft<typeof NumericalPattern>[]
+).map((p) => ({ ...p, ...site }));

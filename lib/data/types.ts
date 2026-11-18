@@ -1,5 +1,6 @@
 import type { AlignmentHypothesis, ReferenceQuantity } from '@/lib/contracts/alignment';
 import type { Claim, Proponent, Question, Source } from '@/lib/contracts/claims';
+import type { NumericalPattern } from '@/lib/contracts/coincidence';
 import type { Anchor, Measurement, Site, Structure } from '@/lib/contracts/site';
 import type { TimelineEvent } from '@/lib/contracts/timeline';
 
@@ -22,4 +23,6 @@ export interface SiteData {
   listTimeline(siteSlug: string): Promise<TimelineEvent[]>;
   listAlignments(siteSlug: string): Promise<AlignmentHypothesis[]>;
   listReferenceQuantities(): Promise<ReferenceQuantity[]>;
+  /** Added in M4, for the coincidence explorer. */
+  listPatterns(siteSlug: string): Promise<NumericalPattern[]>;
 }

@@ -394,7 +394,7 @@ export default function GizaExplorer(props: GizaExplorerProps) {
             onPanel={(tab, size) => dispatch({ type: 'openPanel', tab, size })}
             renderTime={() => skyConsole}
             // Phones: the sheet covers the top right, so the time toggle joins its header.
-            headerActions={panel.size === 'phone' ? timeButton('sm:hidden') : null}
+            headerActions={panelOpen ? timeButton('sm:hidden') : null}
             renderTab={(tab, wide) => {
               switch (tab) {
                 case 'facts':
@@ -403,7 +403,13 @@ export default function GizaExplorer(props: GizaExplorerProps) {
                       structures={props.panel.structures}
                       measurements={props.panel.measurements}
                       references={props.panel.references}
+                      patterns={props.panel.patterns}
+                      claims={props.panel.claims}
+                      proponents={props.panel.proponents}
+                      explorer={state.explorer}
                       onFocusStructure={onFocusStructure}
+                      onOpenExplorer={(pattern) => dispatch({ type: 'openExplorer', pattern })}
+                      onCloseExplorer={() => dispatch({ type: 'closeExplorer' })}
                     />
                   );
                 case 'sky':

@@ -142,7 +142,8 @@ export function InfoPanel({
         </div>
         <div className="flex min-h-0 flex-1">
           {wide && renderTime ? (
-            <div className="w-96 shrink-0 overflow-y-auto overscroll-contain border-r border-border p-5">
+            // Phones have no room for a column (the sheet's header has the time toggle).
+            <div className="w-96 shrink-0 overflow-y-auto overscroll-contain border-r border-border p-5 max-sm:hidden">
               {renderTime()}
             </div>
           ) : null}
