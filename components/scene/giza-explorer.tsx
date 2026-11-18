@@ -343,8 +343,8 @@ export default function GizaExplorer(props: GizaExplorerProps) {
         </p>
       )}
 
-      {/* Floating panels share the Egypt theme in its dark variant: they sit on the scene. */}
-      <div data-theme="egypt" className="dark contents">
+      {/* Controls and panels follow the site theme (light or dark) from the route layout. */}
+      <div className="contents">
         {/* Top row: view and layer controls, centred, with the info panel's open button
             at the end. Wider screens keep an equal column on the left so the controls
             centre on the scene. An open panel takes the right side (wider screens) or
@@ -452,7 +452,7 @@ export default function GizaExplorer(props: GizaExplorerProps) {
             {timeOpen ? (
               <div
                 id={timeCardId}
-                className="pointer-events-auto max-h-[calc(100svh-18rem)] w-full overflow-y-auto overscroll-contain rounded-2xl border border-white/10 bg-[oklch(0.16_0.012_60/0.82)] p-4 shadow-[0_20px_60px_-20px_rgb(0_0_0/0.7)] backdrop-blur-md sm:w-96 sm:p-5"
+                className="pointer-events-auto max-h-[calc(100svh-18rem)] w-full overflow-y-auto overscroll-contain rounded-2xl border border-foreground/10 bg-background/85 p-4 shadow-[0_20px_60px_-20px_rgb(0_0_0/0.7)] backdrop-blur-md sm:w-96 sm:p-5"
               >
                 {skyConsole}
               </div>

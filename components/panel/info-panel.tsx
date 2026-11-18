@@ -7,6 +7,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import type { PanelData } from '@/lib/data/panel';
 import { availableTabs } from '@/lib/data/panel';
 import type { SceneState } from '@/lib/scene/state';
+import { useEdgeFade } from '@/lib/use-edge-fade';
 import { cn } from '@/lib/utils';
 
 type Tab = SceneState['panel']['tab'];
@@ -49,7 +50,7 @@ export function InfoPanelButton({
       aria-label="Open the info panel"
       title="Facts, sky, timeline and views"
       className={cn(
-        'pointer-events-auto flex size-11 shrink-0 items-center justify-center rounded-full border border-white/15 bg-background/75 text-foreground shadow-lg backdrop-blur-md transition-colors hover:bg-background/90 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none',
+        'pointer-events-auto flex size-11 shrink-0 items-center justify-center rounded-full border border-foreground/15 bg-background/75 text-foreground shadow-lg backdrop-blur-md transition-colors hover:bg-background/90 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none',
         className
       )}
     >
@@ -85,6 +86,7 @@ export function InfoPanel({
   renderTime?: () => ReactNode;
   headerActions?: ReactNode;
 }) {
+  const [tabListRef, tabFade] = useEdgeFade<HTMLDivElement>();
   const tabs = shownTabs(data);
   if (tabs.length === 0 || size === 'icon') return null;
   const active = tabs.includes(tab) ? tab : tabs[0];
@@ -94,7 +96,7 @@ export function InfoPanel({
     <aside
       aria-label="Info panel"
       className={cn(
-        'pointer-events-auto flex h-full flex-col overflow-hidden rounded-2xl border border-white/10 bg-background/88 text-foreground shadow-[0_20px_60px_-20px_rgb(0_0_0/0.7)] backdrop-blur-md',
+        'pointer-events-auto flex h-full flex-col overflow-hidden rounded-2xl border border-foreground/10 bg-background/88 text-foreground shadow-[0_20px_60px_-20px_rgb(0_0_0/0.7)] backdrop-blur-md',
         // Phones: the sheet runs under the chat bar, so its content stops above it.
         'max-sm:rounded-b-none max-sm:pb-19'
       )}
@@ -106,6 +108,8 @@ export function InfoPanel({
       >
         <div className="flex items-center gap-1 border-b border-border px-2 py-1.5">
           <TabsList
+            ref={tabListRef}
+            style={tabFade}
             variant="line"
             className="h-11 min-w-0 flex-1 justify-start overflow-x-auto scrollbar-none"
           >

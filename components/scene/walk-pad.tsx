@@ -56,7 +56,7 @@ function HoldButton({
       onKeyDown={onKey(true)}
       onKeyUp={onKey(false)}
       onContextMenu={(e) => e.preventDefault()}
-      className="flex size-11 touch-none items-center justify-center rounded-full border border-white/15 bg-[oklch(0.16_0.012_60/0.7)] text-[oklch(0.9_0.02_85)] backdrop-blur-md transition-colors select-none hover:bg-[oklch(0.22_0.012_60/0.85)] focus-visible:ring-2 focus-visible:ring-[oklch(0.8_0.12_85)] focus-visible:outline-none active:bg-[oklch(0.8_0.12_85/0.3)]"
+      className="flex size-11 touch-none items-center justify-center rounded-full border border-foreground/15 bg-background/75 text-foreground backdrop-blur-md transition-colors select-none hover:bg-muted/90 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none active:bg-primary/30"
     >
       {children}
     </button>
@@ -64,7 +64,7 @@ function HoldButton({
 }
 
 const roundButton =
-  'flex size-11 items-center justify-center rounded-full border border-white/15 bg-[oklch(0.16_0.012_60/0.7)] backdrop-blur-md transition-colors hover:bg-[oklch(0.22_0.012_60/0.85)] focus-visible:ring-2 focus-visible:ring-[oklch(0.8_0.12_85)] focus-visible:outline-none';
+  'flex size-11 items-center justify-center rounded-full border border-foreground/15 bg-background/75 backdrop-blur-md transition-colors hover:bg-muted/90 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none';
 
 /** Whether the readout and tips are shown; remembered per browser. */
 const INFO_KEY = 'stone-and-star:walk-info';
@@ -118,7 +118,7 @@ export function WalkInfo({
     <div
       id={id}
       className={cn(
-        'pointer-events-auto max-w-80 rounded-xl border border-white/10 bg-[oklch(0.16_0.012_60/0.7)] px-3 py-2 text-right text-xs/relaxed text-[oklch(0.9_0.02_85)] backdrop-blur-md',
+        'pointer-events-auto max-w-80 rounded-xl border border-foreground/10 bg-background/75 px-3 py-2 text-right text-xs/relaxed text-foreground backdrop-blur-md',
         className
       )}
     >
@@ -128,10 +128,10 @@ export function WalkInfo({
           apex {sight.elevationDeg.toFixed(1)}° up
         </p>
       ) : null}
-      <p className="text-[oklch(0.72_0.03_80)] pointer-coarse:hidden">
+      <p className="text-muted-foreground pointer-coarse:hidden">
         Drag to look · WASD or arrows to walk · scroll to step · Shift to run
       </p>
-      <p className="hidden text-[oklch(0.72_0.03_80)] pointer-coarse:block">
+      <p className="hidden text-muted-foreground pointer-coarse:block">
         Drag to look · pinch to step
       </p>
     </div>
@@ -158,10 +158,7 @@ export function WalkPad({
 }) {
   return (
     <div
-      className={cn(
-        'pointer-events-none flex flex-col items-end gap-2 text-[oklch(0.9_0.02_85)]',
-        className
-      )}
+      className={cn('pointer-events-none flex flex-col items-end gap-2 text-foreground', className)}
     >
       <div role="group" aria-label="Walk" className="pointer-events-auto grid grid-cols-3 gap-1.5">
         <HoldButton move="left" label="Turn left">
@@ -193,10 +190,7 @@ export function WalkPad({
           aria-label="Distance readout and tips"
           title={info.show ? 'Hide the readout and tips' : 'Show the readout and tips'}
           onClick={info.toggle}
-          className={cn(
-            roundButton,
-            'aria-pressed:border-[oklch(0.8_0.12_85/0.7)] aria-pressed:bg-[oklch(0.8_0.12_85/0.22)]'
-          )}
+          className={cn(roundButton, 'aria-pressed:border-primary/70 aria-pressed:bg-selected')}
         >
           <Info aria-hidden className="size-4" />
         </button>

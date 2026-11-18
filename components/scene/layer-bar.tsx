@@ -1,7 +1,5 @@
 'use client';
 
-import { useRef } from 'react';
-
 import type { SceneState } from '@/lib/scene/state';
 import { useEdgeFade } from '@/lib/use-edge-fade';
 import { cn } from '@/lib/utils';
@@ -14,11 +12,9 @@ const LAYERS = [
 ] as const;
 
 const chip =
-  'min-h-11 rounded-full border px-4 text-sm whitespace-nowrap backdrop-blur-md transition-colors focus-visible:ring-2 focus-visible:ring-[oklch(0.8_0.12_85)] focus-visible:outline-none';
-const off =
-  'border-white/15 bg-[oklch(0.16_0.012_60/0.6)] text-[oklch(0.82_0.03_85)] hover:bg-[oklch(0.16_0.012_60/0.8)]';
-const on =
-  'border-[oklch(0.8_0.12_85/0.7)] bg-[oklch(0.8_0.12_85/0.22)] text-[oklch(0.97_0.02_85)]';
+  'min-h-11 rounded-full border px-4 text-sm whitespace-nowrap backdrop-blur-md transition-colors focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none';
+const off = 'border-foreground/15 bg-background/60 text-foreground/80 hover:bg-background/85';
+const on = 'border-primary/70 bg-selected text-foreground';
 
 export function LayerBar({
   state,
@@ -36,11 +32,10 @@ export function LayerBar({
   className?: string;
 }) {
   // Centred while it fits; scrolls from the left edge, fading, when it doesn't.
-  const scroller = useRef<HTMLDivElement>(null);
-  const fade = useEdgeFade(scroller);
+  const [scrollerRef, fade] = useEdgeFade<HTMLDivElement>();
   return (
     <div
-      ref={scroller}
+      ref={scrollerRef}
       style={fade}
       className={cn('pointer-events-auto overflow-x-auto pb-1 scrollbar-none', className)}
     >
@@ -63,7 +58,7 @@ export function LayerBar({
             </button>
           ))}
         </div>
-        <span aria-hidden className="w-px shrink-0 bg-white/20" />
+        <span aria-hidden className="w-px shrink-0 bg-foreground/20" />
         <div role="group" aria-label="Layers" className="flex gap-2">
           {LAYERS.map((l) => (
             <button
@@ -77,7 +72,7 @@ export function LayerBar({
             </button>
           ))}
         </div>
-        {hasSurviving ? <span aria-hidden className="w-px shrink-0 bg-white/20" /> : null}
+        {hasSurviving ? <span aria-hidden className="w-px shrink-0 bg-foreground/20" /> : null}
         {hasSurviving ? (
           <div role="group" aria-label="Pyramids shown" className="flex gap-2">
             {(

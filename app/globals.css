@@ -5,6 +5,12 @@
 
 @custom-variant dark (&:is(.dark *));
 
+/* Selected state for controls floating on the scene: opaque, so the sky behind
+   them can't muddy the tint (a translucent tint reads grey over a light sky). */
+@utility bg-selected {
+  background-color: color-mix(in oklab, var(--primary) 24%, var(--background));
+}
+
 :root {
   --background: oklch(1 0 0);
   --foreground: oklch(0.145 0 0);

@@ -29,8 +29,7 @@ export function ChatBar({
   const [focused, setFocused] = useState(false);
   const input = useRef<HTMLInputElement>(null);
   const answerId = useId();
-  const suggestionList = useRef<HTMLUListElement>(null);
-  const fade = useEdgeFade(suggestionList);
+  const [suggestionListRef, fade] = useEdgeFade<HTMLUListElement>();
 
   const submit = (e: FormEvent) => {
     e.preventDefault();
@@ -47,7 +46,7 @@ export function ChatBar({
           id={answerId}
           aria-live="polite"
           aria-label="Guide answer"
-          className="pointer-events-auto rounded-2xl border border-white/10 bg-background/90 p-4 text-sm/relaxed text-foreground shadow-lg backdrop-blur-md"
+          className="pointer-events-auto rounded-2xl border border-foreground/10 bg-background/90 p-4 text-sm/relaxed text-foreground shadow-lg backdrop-blur-md"
         >
           <div className="flex items-start justify-between gap-3">
             <p className="font-heading text-lg/snug font-semibold">{asked}</p>
@@ -72,7 +71,7 @@ export function ChatBar({
       ) : null}
 
       <ul
-        ref={suggestionList}
+        ref={suggestionListRef}
         style={fade}
         aria-label="Suggested questions"
         className={cn(
@@ -90,7 +89,7 @@ export function ChatBar({
                 onDraft(s);
                 input.current?.focus();
               }}
-              className="min-h-11 rounded-full border border-white/15 bg-background/70 px-3.5 text-sm whitespace-nowrap text-foreground/90 backdrop-blur-md transition-colors hover:bg-background/90 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
+              className="min-h-11 rounded-full border border-foreground/15 bg-background/70 px-3.5 text-sm whitespace-nowrap text-foreground/90 backdrop-blur-md transition-colors hover:bg-background/90 focus-visible:ring-2 focus-visible:ring-ring focus-visible:outline-none"
             >
               {s}
             </button>
@@ -100,7 +99,7 @@ export function ChatBar({
 
       <form
         onSubmit={submit}
-        className="pointer-events-auto flex items-center gap-2 rounded-full border border-white/15 bg-background/85 p-1.5 pl-5 shadow-[0_20px_60px_-20px_rgb(0_0_0/0.7)] backdrop-blur-md focus-within:border-primary/60"
+        className="pointer-events-auto flex items-center gap-2 rounded-full border border-foreground/15 bg-background/85 p-1.5 pl-5 shadow-[0_20px_60px_-20px_rgb(0_0_0/0.7)] backdrop-blur-md focus-within:border-primary/60"
       >
         <label htmlFor="scene-chat" className="sr-only">
           Ask about Giza
